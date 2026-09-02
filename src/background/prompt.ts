@@ -1,4 +1,4 @@
-import type { Query } from "../shared/types";
+import type { PriorTurn, Query } from "../shared/types";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -29,6 +29,8 @@ const SYSTEM = `你是一位英语功底极好、同时精通各学科行话的�
 来历可以是词源、生活典故、或某个圈子当初为什么造它选它，挑能让人多记住一层的那一面讲。只讲这个词，不讲文章主题。
 写成自然的解释文字，用平实的中文。英文原词与英文释意保留英文。能短则短。
 碰到数学符号和公式，用 LaTeX 写，并用 $ 包起来：行内写 $X_l$，单独成行写 $$...$$。
+
+用户看完解释后可能接着追问。追问时直接回答他问的那个问题，同样简明，不要再套上面的骨架、不要重复已经说过的内容。
 
 用户选中的如果本身就是一个符号、一个公式或一段记号，照样按三块答：
 第一块说它在这里表示什么、整个式子在算什么；
@@ -143,6 +145,14 @@ function snapEnd(a: string, i: number): number {
 /**
  * 一条 system + 一条 user。上文排在选中词之前，缓存才吃得到前缀。
  */
+export function buildFollowupMessages(
+  q: Query,
+  prior: PriorTurn[],
+  question: string,
+): ChatMessage[] {
+  return [...buildMessages(q), ...prior, { role: "user", content: question }];
+}
+
 export function buildMessages(q: Query): ChatMessage[] {
   return [
     { role: "system", content: SYSTEM },

@@ -1,7 +1,7 @@
 import { loadSettings } from "../shared/settings";
 import { PORT_NAME, type ClientMessage, type ServerMessage } from "../shared/types";
 import { streamChat } from "./deepseek";
-import { buildMessages, type ChatMessage } from "./prompt";
+import { buildFollowupMessages, buildMessages, type ChatMessage } from "./prompt";
 
 /**
  * API 调用必须在 service worker 里：
@@ -37,7 +37,7 @@ chrome.runtime.onConnect.addListener((port) => {
       inflight.delete(msg.id);
       return;
     }
-    if (msg.type !== "explain") return;
+    if (msg.type !== "explain" && msg.type !== "followup") return;
 
     // 快速连续选词：新请求作废旧请求，省钱也省得结果错位
     abortAll();
@@ -47,7 +47,7 @@ chrome.runtime.onConnect.addListener((port) => {
 
   port.onDisconnect.addListener(abortAll);
 
-  async function handleExplain(msg: ClientMessage & { type: "explain" }) {
+  async function handleExplain(msg: ClientMessage & { type: "explain" | "followup" }) {
     const settings = await loadSettings();
     if (!settings.apiKey) {
       post({
@@ -59,8 +59,11 @@ chrome.runtime.onConnect.addListener((port) => {
       return;
     }
 
-    const messages = buildMessages(msg);
-    if (settings.debug) dumpContext(msg.word, messages);
+    const messages =
+      msg.type === "followup"
+        ? buildFollowupMessages(msg, msg.prior, msg.question)
+        : buildMessages(msg);
+    if (settings.debug) dumpContext(msg.type === "followup" ? msg.question : msg.word, messages);
 
     const ctrl = new AbortController();
     inflight.set(msg.id, ctrl);

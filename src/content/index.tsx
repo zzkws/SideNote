@@ -3,12 +3,23 @@ import { loadSettings } from "../shared/settings";
 import {
   PORT_NAME,
   type ClientMessage,
+  type PriorTurn,
   type Query,
   type Settings,
   type ServerMessage,
 } from "../shared/types";
 import { Popup } from "../ui/Popup";
-import { anchor, failure, placement, status, text, visible, word } from "../ui/store";
+import {
+  anchor,
+  appendDelta,
+  failure,
+  placement,
+  pushTurn,
+  status,
+  thread,
+  visible,
+  word,
+} from "../ui/store";
 import css from "../ui/styles.css?inline";
 import { getArticle } from "./article";
 import { readSelection } from "./selection";
@@ -66,7 +77,7 @@ function onServerMessage(msg: ServerMessage) {
   switch (msg.type) {
     case "delta":
       if (status.value === "loading") status.value = "streaming";
-      text.value += msg.text;
+      appendDelta(msg.text);
       break;
     case "done":
       status.value = "done";
@@ -86,13 +97,35 @@ function ask(q: Query & { range: Range }) {
 
   word.value = q.word;
   anchor.value = q.range;
-  text.value = "";
+  thread.value = [{ question: null, answer: "" }];
   failure.value = null;
   status.value = "loading";
   visible.value = true;
 
   const { range: _range, ...payload } = q;
   send({ type: "explain", id: currentId, ...payload });
+}
+
+/**
+ * 追问。把之前来回过的内容原样带上，模型才接得住"它"、"这个"之类的指代。
+ * 上文本身排在最前面，仍然走前缀缓存，追问只多付新增的那几句。
+ */
+function askFollowup(question: string) {
+  if (!lastQuery) return;
+
+  const prior: PriorTurn[] = [];
+  for (const t of thread.value) {
+    if (t.question !== null) prior.push({ role: "user", content: t.question });
+    if (t.answer) prior.push({ role: "assistant", content: t.answer });
+  }
+
+  currentId = crypto.randomUUID();
+  pushTurn(question);
+  failure.value = null;
+  status.value = "loading";
+
+  const { range: _range, ...payload } = lastQuery;
+  send({ type: "followup", id: currentId, question, prior, ...payload });
 }
 
 function close() {
@@ -175,6 +208,7 @@ render(
     onClose={close}
     onOpenOptions={() => send({ type: "openOptions" })}
     onRetry={() => lastQuery && ask(lastQuery)}
+    onAsk={askFollowup}
   />,
   mountPoint,
 );

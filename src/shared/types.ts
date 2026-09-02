@@ -40,8 +40,21 @@ export interface Query {
   url: string;
 }
 
+/** 浮层里的一轮问答。第一轮是划词本身，question 为 null */
+export interface Turn {
+  question: string | null;
+  answer: string;
+}
+
+/** 追问时把之前来回过的内容原样带上，让模型接着上文答 */
+export interface PriorTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export type ClientMessage =
   | ({ type: "explain"; id: string } & Query)
+  | ({ type: "followup"; id: string; question: string; prior: PriorTurn[] } & Query)
   | { type: "cancel"; id: string }
   | { type: "openOptions" };
 

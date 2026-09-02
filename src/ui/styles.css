@@ -231,3 +231,88 @@
 .sn-md math[display="inline"] {
   vertical-align: -0.1em;
 }
+
+/* ---------- 追问 ---------- */
+.sn-turn {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sn-border);
+}
+
+.sn-q {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: var(--sn-fg);
+}
+
+.sn-q::before {
+  content: "问";
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  background: var(--sn-accent);
+  color: var(--sn-bg);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sn-ask {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-top: 1px solid var(--sn-border);
+  background: var(--sn-bg);
+  border-radius: 0 0 12px 12px;
+}
+
+.sn-ask input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--sn-border);
+  border-radius: 7px;
+  background: var(--sn-subtle);
+  color: var(--sn-fg);
+  font: inherit;
+  font-size: 13px;
+}
+
+.sn-ask input::placeholder { color: var(--sn-muted); }
+
+.sn-ask input:focus {
+  outline: none;
+  border-color: var(--sn-accent);
+}
+
+.sn-ask input:disabled { opacity: 0.5; }
+
+.sn-send {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: var(--sn-accent);
+  color: var(--sn-bg);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sn-send:disabled { opacity: 0.35; cursor: default; }
+
+.sn-inline-error {
+  margin: 8px 0 0;
+  color: var(--sn-danger);
+  font-size: 13px;
+}
