@@ -202,3 +202,16 @@ body.pv-dragging::after {
   padding: 80px 20px;
   color: var(--pv-muted);
 }
+
+.pv-zoom {
+  flex: none;
+  padding: 6px 8px;
+  border: 1px solid var(--pv-border);
+  border-radius: 8px;
+  background: var(--pv-surface);
+  color: var(--pv-fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pv-zoom:hover { border-color: var(--pv-accent); }

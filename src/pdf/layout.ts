@@ -165,10 +165,7 @@ function joinLine(line: Frag[]): { text: string; parts: { frag: Frag; at: number
 }
 
 export function buildDoc(pages: { width: number; items: RawItem[] }[]): Doc {
-  const paragraphs: string[] = [];
-  const spans: ItemSpan[] = [];
-  let cursor = 0;
-
+  const blocks: { text: string; spans: ItemSpan[] }[] = [];
   let buf = "";
   let bufSpans: ItemSpan[] = [];
 
@@ -180,11 +177,10 @@ export function buildDoc(pages: { width: number; items: RawItem[] }[]): Doc {
       return;
     }
     const lead = buf.length - buf.trimStart().length;
-    for (const sp of bufSpans) {
-      spans.push({ ...sp, start: cursor + sp.start - lead, end: cursor + sp.end - lead });
-    }
-    paragraphs.push(t);
-    cursor += t.length + 2; // 段落之间空一行
+    blocks.push({
+      text: t,
+      spans: bufSpans.map((sp) => ({ ...sp, start: sp.start - lead, end: sp.end - lead })),
+    });
     buf = "";
     bufSpans = [];
   };
@@ -234,7 +230,53 @@ export function buildDoc(pages: { width: number; items: RawItem[] }[]): Doc {
   });
   flush();
 
-  return { text: paragraphs.join("\n\n"), spans };
+  return assemble(merge(blocks));
+}
+
+/**
+ * 合并碎块。PDF 的图注、公式、跨栏残留会切出一地短碎片 ——
+ * 上文里满屏三五个字的"段落"既费 token 又难读。
+ *
+ * 两条规则：以小写字母或标点开头的块是上一块的续写（比如 "ex-" 断在栏尾、
+ * "tends the MAD dataset" 落到下一块）；连续的短碎片并成一块。
+ */
+function merge(blocks: { text: string; spans: ItemSpan[] }[]) {
+  const SHORT = 46;
+  const out: { text: string; spans: ItemSpan[] }[] = [];
+
+  for (const b of blocks) {
+    const prev = out[out.length - 1];
+    const isTail = /^[a-z,;:)\]]/.test(b.text);
+    const bothShort = Boolean(prev) && prev.text.length < SHORT && b.text.length < SHORT;
+
+    if (prev && (isTail || bothShort)) {
+      // 上一块以连字符收尾说明词被断开了，直接接上不留空格
+      const hyphen = isTail && /[-‐]$/.test(prev.text);
+      if (hyphen) prev.text = prev.text.slice(0, -1);
+      const glue = hyphen ? "" : " ";
+      const base = prev.text.length + glue.length;
+      prev.text += glue + b.text;
+      for (const sp of b.spans) {
+        prev.spans.push({ ...sp, start: base + sp.start, end: base + sp.end });
+      }
+    } else {
+      out.push({ text: b.text, spans: [...b.spans] });
+    }
+  }
+  return out;
+}
+
+/** 拼成最终正文，并把每个 item 的区间换算成全文偏移 */
+function assemble(blocks: { text: string; spans: ItemSpan[] }[]): Doc {
+  const spans: ItemSpan[] = [];
+  let cursor = 0;
+  for (const b of blocks) {
+    for (const sp of b.spans) {
+      spans.push({ ...sp, start: cursor + sp.start, end: cursor + sp.end });
+    }
+    cursor += b.text.length + 2; // 段落之间空一行
+  }
+  return { text: blocks.map((b) => b.text).join("\n\n"), spans };
 }
 
 

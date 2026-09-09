@@ -30,8 +30,17 @@ import "./viewer.css";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
-/** 渲染倍率。1.5 在常见屏幕上清晰度和内存都合适 */
-const SCALE = 1.5;
+/** 版面倍率：页面在屏幕上显示多大。用户可调 */
+let zoom = 1.4;
+
+/**
+ * 画布的实际像素倍率。
+ * 按 CSS 尺寸画会在高分屏上被浏览器拉伸，字就糊了 —— 必须乘上 devicePixelRatio
+ * 才是屏幕的原生分辨率。上限 3 是为了拦住内存：一页 A4 在 3 倍下已经近 40 MB。
+ */
+function outputScale(): number {
+  return Math.min(window.devicePixelRatio || 1, 3);
+}
 
 const app = document.getElementById("app") as HTMLDivElement;
 let index: DocIndex | null = null;
@@ -235,7 +244,21 @@ function buildChrome(): HTMLDivElement {
   pickerHandler(input);
   label.append(input);
 
-  bar.append(brand, name, label);
+  const zoomSel = document.createElement("select");
+  zoomSel.className = "pv-zoom";
+  for (const [label2, v] of [["100%", 1], ["125%", 1.25], ["140%", 1.4], ["175%", 1.75], ["200%", 2]] as [string, number][]) {
+    const o = document.createElement("option");
+    o.value = String(v);
+    o.textContent = label2;
+    if (v === zoom) o.selected = true;
+    zoomSel.append(o);
+  }
+  zoomSel.onchange = () => {
+    zoom = Number(zoomSel.value);
+    void renderAll();
+  };
+
+  bar.append(brand, name, zoomSel, label);
 
   const pages = document.createElement("div");
   pages.className = "pv-pages";
@@ -257,7 +280,6 @@ async function openFile(file: File) {
 
   // 先把全文抽出来建索引。取文字很快，渲染画布很慢 ——
   // 分两段做，翻到第一页就能查词，不必等整份文档画完。
-  const contents = [];
   const raw: { width: number; items: RawItem[] }[] = [];
   for (let n = 1; n <= pdf.numPages; n++) {
     const page = await pdf.getPage(n);
@@ -271,27 +293,45 @@ async function openFile(file: File) {
   index = new DocIndex(buildDoc(raw));
   note.remove();
 
+  pagesEl = pages;
+  await renderAll();
+}
+
+/** 重新按当前 zoom 铺一遍页面。改缩放时文字层位置也要跟着变，所以整体重建 */
+async function renderAll() {
+  if (!pagesEl) return;
+  pagesEl.textContent = "";
+  queue = [];
+  drawn.clear();
+
   // 文字层先上：它是纯 DOM，不依赖画布。这样翻到哪一页就能选哪一页的词，
   // 不用等画布画完（画布走 requestAnimationFrame，标签页在后台时会停）。
-  const pending: { page: PDFPageProxy; canvas: HTMLCanvasElement; viewport: PageViewport }[] = [];
-
-  for (let n = 1; n <= pdf.numPages; n++) {
+  for (let n = 1; n <= contents.length; n++) {
     const { page, content } = contents[n - 1];
-    const viewport = page.getViewport({ scale: SCALE });
+    const viewport = page.getViewport({ scale: zoom });
+    const os = outputScale();
 
     const wrap = document.createElement("div");
     wrap.className = "pv-page";
-    wrap.style.width = `${viewport.width}px`;
-    wrap.style.height = `${viewport.height}px`;
+    wrap.style.width = `${Math.floor(viewport.width)}px`;
+    wrap.style.height = `${Math.floor(viewport.height)}px`;
+    // PDF.js 的文字层用这两个 CSS 变量算每个 span 的位置和字号。
+    // 不设的话 span 按 1 倍排、画布按 zoom 倍画，误差沿行累积，
+    // 于是"看着选中 introduced，实际选到 ntly introd"。
+    wrap.style.setProperty("--scale-factor", String(zoom));
+    wrap.style.setProperty("--total-scale-factor", String(zoom));
 
     const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+    // 背后的位图按屏幕原生分辨率开，CSS 尺寸仍是版面尺寸
+    canvas.width = Math.floor(viewport.width * os);
+    canvas.height = Math.floor(viewport.height * os);
+    canvas.style.width = `${Math.floor(viewport.width)}px`;
+    canvas.style.height = `${Math.floor(viewport.height)}px`;
 
     const layer = document.createElement("div");
     layer.className = "pv-text";
     wrap.append(canvas, layer);
-    pages.append(wrap);
+    pagesEl.append(wrap);
 
     const tl = new TextLayer({ textContentSource: content, container: layer, viewport });
     await tl.render();
@@ -301,16 +341,16 @@ async function openFile(file: File) {
       div.dataset.i = String(i);
     });
 
-    pending.push({ page, canvas, viewport });
+    queue.push({ page, canvas, viewport });
     observer.observe(wrap);
-    wrapToPage.set(wrap, pending.length - 1);
+    wrapToPage.set(wrap, queue.length - 1);
   }
-
-  queue = pending;
 }
 
 /** 画布按需渲染：滚到跟前才画，几十页的书也不会一上来就卡住 */
 let queue: { page: PDFPageProxy; canvas: HTMLCanvasElement; viewport: PageViewport }[] = [];
+let contents: { page: PDFPageProxy; content: Awaited<ReturnType<PDFPageProxy["getTextContent"]>> }[] = [];
+let pagesEl: HTMLDivElement | null = null;
 const wrapToPage = new WeakMap<Element, number>();
 const drawn = new Set<number>();
 
@@ -323,7 +363,14 @@ const observer = new IntersectionObserver(
       drawn.add(i);
       const { page, canvas, viewport } = queue[i];
       const ctx = canvas.getContext("2d");
-      if (ctx) void page.render({ canvasContext: ctx, viewport, canvas }).promise;
+      if (!ctx) continue;
+      const os = outputScale();
+      void page.render({
+        canvasContext: ctx,
+        viewport,
+        canvas,
+        transform: os === 1 ? undefined : [os, 0, 0, os, 0, 0],
+      }).promise;
     }
   },
   { rootMargin: "600px 0px" },
