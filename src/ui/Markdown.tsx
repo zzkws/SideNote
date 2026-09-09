@@ -55,13 +55,15 @@ export function render(src: string, katex: Katex | null): string {
       const tex = block ?? inline;
       if (!tex) return whole;
       try {
-        slots.push(
-          katex.renderToString(tex, {
-            output: "mathml",
-            displayMode: block !== undefined,
-            throwOnError: false,
-          }),
-        );
+        const out = katex.renderToString(tex, {
+          output: "mathml",
+          displayMode: block !== undefined,
+          throwOnError: false,
+        });
+        // KaTeX 会在 MathML 里塞一个 <annotation> 存原始 LaTeX（给复制用）。
+        // DOMPurify 不认这个标签，剥掉标签却留下文字 —— 于是公式底下多出一行
+        // 生的 rac{1}{2} 之类。这里直接删掉，我们用不上。
+        slots.push(out.replace(/<annotation[^>]*>[\s\S]*?<\/annotation>/g, ""));
         return `%%SNMATH${slots.length - 1}%%`;
       } catch {
         return whole; // 流式输出中途公式还不完整，先留着
@@ -69,9 +71,17 @@ export function render(src: string, katex: Katex | null): string {
     },
   );
 
-  const html = (marked.parse(staged, { async: false }) as string).replace(
+  let html = (marked.parse(staged, { async: false }) as string).replace(
     /%%SNMATH(\d+)%%/g,
     (_: string, i: string) => slots[Number(i)] ?? "",
+  );
+
+  // 只有这几个固定小节名才当标题渲染。原来靠"整段只有一个 <strong>"来判断，
+  // 正文里出现独立成段的粗体（比如「椭球状的云团」）也会被误当成小节名。
+  // 所以只换段首那个 <strong>，段里其余内容原样保留。
+  html = html.replace(
+    /<p><strong>(英文释意|文化拆解|在英语里|背景|记住)<\/strong>/g,
+    '<p><span class="sn-label">$1</span>',
   );
 
   // 内容来自模型，直接 innerHTML 是 XSS 面 —— 必过消毒（DOMPurify 默认放行 MathML）

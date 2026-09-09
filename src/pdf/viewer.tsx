@@ -2,6 +2,7 @@ import { GlobalWorkerOptions, TextLayer, getDocument } from "pdfjs-dist";
 import type { PDFPageProxy, PageViewport } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { render } from "preact";
+import { saveConversation } from "../shared/history";
 import { loadSettings } from "../shared/settings";
 import {
   PORT_NAME,
@@ -67,6 +68,8 @@ const inExtension = typeof chrome !== "undefined" && Boolean(chrome.runtime?.id)
 let port: chrome.runtime.Port | null = null;
 let currentId: string | null = null;
 let lastQuery: (Query & { range: Range }) | null = null;
+/** 一次查询（含之后的追问）共用一个 id，存历史时按它覆盖 */
+let convId: string | null = null;
 
 function getPort(): chrome.runtime.Port {
   if (port) return port;
@@ -106,6 +109,7 @@ function onServerMessage(msg: ServerMessage) {
       break;
     case "done":
       status.value = "done";
+      void persist();
       break;
     case "error":
       status.value = "error";
@@ -117,6 +121,7 @@ function onServerMessage(msg: ServerMessage) {
 function ask(q: Query & { range: Range }) {
   lastQuery = q;
   currentId = crypto.randomUUID();
+  convId = currentId;
   word.value = q.word;
   anchor.value = q.range;
   thread.value = [{ question: null, answer: "" }];
@@ -140,6 +145,23 @@ function askFollowup(question: string) {
   status.value = "loading";
   const { range: _r, ...payload } = lastQuery;
   send({ type: "followup", id: currentId, question, prior, ...payload });
+}
+
+/** 一轮答完就落盘。追问会覆盖同一条记录，所以历史里是完整的一次对话 */
+function persist() {
+  const q = lastQuery;
+  if (!q || !convId) return;
+  const turns = thread.value;
+  if (!turns.length || !turns[0].answer) return;
+  void saveConversation({
+    id: convId,
+    word: q.word,
+    sentence: q.sentence,
+    title: q.title,
+    url: q.url,
+    at: Date.now(),
+    turns,
+  });
 }
 
 function close() {

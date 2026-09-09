@@ -179,14 +179,19 @@
 
 .sn-md p { margin: 0 0 10px; }
 
-/* 模型用 **粗体** 做小节标题 */
-.sn-md p > strong:only-child {
+/* 固定的几个小节名（渲染时打上 .sn-label，只认那几个词） */
+.sn-md .sn-label {
   display: block;
-  margin-top: 14px;
+  margin: 14px 0 6px;
   font-size: 12px;
   font-weight: 650;
   letter-spacing: 0.04em;
   color: var(--sn-muted);
+}
+
+/* KaTeX 的 LaTeX 原文注解，浏览器不认时兜底藏掉 */
+.sn-md annotation {
+  display: none;
 }
 
 .sn-md ul, .sn-md ol { margin: 0 0 10px; padding-left: 20px; }

@@ -17,6 +17,11 @@ function Menu() {
         <span>把 PDF 拖进去就能划词。Chrome 自带的查看器拿不到选区，所以另开一页。</span>
       </button>
 
+      <button class="m-item" type="button" onClick={() => open("src/history/index.html")}>
+        <strong>历史对话</strong>
+        <span>查过的词和追问都存在本机，可以搜、可以回到原文。</span>
+      </button>
+
       <button class="m-item" type="button" onClick={() => open("src/options/index.html")}>
         <strong>设置</strong>
         <span>API Key、模型、浮层位置、触发方式。</span>
