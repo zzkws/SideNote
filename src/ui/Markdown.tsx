@@ -12,7 +12,12 @@ type Katex = typeof import("katex").default;
  */
 let pending: Promise<Katex> | null = null;
 function loadKatex(): Promise<Katex> {
-  pending ??= import("katex").then((m) => m.default ?? (m as unknown as Katex));
+  pending ??= import("katex")
+    .then((m) => m.default ?? (m as unknown as Katex))
+    .catch((e) => {
+      pending = null; // 别把失败缓存住，下次还能再试
+      throw e;
+    });
   return pending;
 }
 
@@ -32,7 +37,7 @@ function toDollar(md: string): string {
 }
 
 const MATH_G = /\$\$([\s\S]+?)\$\$|\$(.+?)\$/g;
-const HAS_MATH = /\$.+?\$/;
+const HAS_MATH = /\$\$[\s\S]+?\$\$|\$.+?\$/;
 
 /** 浮层标题栏已经显示了原词，模型若仍输出标题就去掉，免得重复 */
 function stripLeadingHeading(md: string): string {

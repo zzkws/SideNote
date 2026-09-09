@@ -239,12 +239,21 @@
   border-top: 1px solid var(--sn-border);
 }
 
+/* 第一轮顶上不需要分隔线 */
+.sn-turn--first {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
 .sn-q {
   display: flex;
   gap: 8px;
+  align-items: flex-start;
   margin-bottom: 12px;
   font-weight: 600;
   color: var(--sn-fg);
+  word-break: break-word;
 }
 
 .sn-q::before {

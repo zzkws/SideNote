@@ -136,22 +136,7 @@ export function Popup({ onClose, onOpenOptions, onRetry, onAsk }: Props) {
       </div>
 
       <div class="sn-body" ref={bodyRef}>
-        {first?.answer ? (
-          <>
-            <Markdown source={first.answer} />
-            {turns.slice(1).map((t, i) => (
-              <div class="sn-turn" key={i}>
-                {t.question && <div class="sn-q">{t.question}</div>}
-                <Markdown source={t.answer} />
-                {/* 追问失败时只在这一轮里提示，已经答好的内容不受影响 */}
-                {st === "error" && err && i === turns.length - 2 && (
-                  <p class="sn-inline-error">{err.message}</p>
-                )}
-              </div>
-            ))}
-            {st === "streaming" && <span class="sn-caret" />}
-          </>
-        ) : st === "error" && err ? (
+        {st === "error" && err && !first?.answer ? (
           <div class="sn-error">
             <strong>{errorTitle(err.code)}</strong>
             <p>{err.message}</p>
@@ -166,13 +151,29 @@ export function Popup({ onClose, onOpenOptions, onRetry, onAsk }: Props) {
             )}
           </div>
         ) : (
-          <div class="sn-skeleton">
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
+          <>
+            {turns.map((t, i) => (
+              <div class={i === 0 ? "sn-turn sn-turn--first" : "sn-turn"} key={i}>
+                {/* 第一轮的「问」就是划中的那个词，跟后面的追问一个形态 */}
+                <div class="sn-q">{i === 0 ? word.value : t.question}</div>
+                {t.answer ? (
+                  <Markdown source={t.answer} />
+                ) : st === "error" ? null : (
+                  <div class="sn-skeleton">
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                  </div>
+                )}
+                {/* 出错只在当前这一轮里提示，前面答好的内容不受影响 */}
+                {st === "error" && err && i === turns.length - 1 && (
+                  <p class="sn-inline-error">{err.message}</p>
+                )}
+              </div>
+            ))}
+            {st === "streaming" && <span class="sn-caret" />}
+          </>
         )}
       </div>
 
