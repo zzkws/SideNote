@@ -9,6 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "icons": "node scripts/make-icons.mjs",
     "poster": "node scripts/make-posters.mjs && node scripts/serve-poster.mjs",
+    "preview": "npm run build && node scripts/serve-dist.mjs",
     "zip": "npm run build && node scripts/zip.mjs",
     "build:only": "vite build",
     "typecheck": "tsc --noEmit"
@@ -21,6 +22,7 @@
     "dompurify": "^3.2.4",
     "katex": "^0.18.4",
     "marked": "^15.0.7",
+    "pdfjs-dist": "^6.3.289",
     "preact": "^10.26.4"
   },
   "devDependencies": {

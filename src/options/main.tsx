@@ -161,6 +161,20 @@ function Options() {
         </div>
       </div>
 
+      <div class="field">
+        <label>PDF 阅读器</label>
+        <button
+          type="button"
+          onClick={() => window.open(chrome.runtime.getURL("src/pdf/index.html"), "_blank")}
+        >
+          打开 PDF 阅读器
+        </button>
+        <div class="hint">
+          Chrome 自带的 PDF 查看器拿不到选区（内部不是网页），所以另开一个页面。
+          把 PDF 拖进去，渲染完就能像在网页上一样划词。
+        </div>
+      </div>
+
       <div class="actions">
         <button class="primary" type="button" onClick={() => void save()}>
           保存
