@@ -26,6 +26,7 @@ import {
 import css from "../ui/styles.css?inline";
 import { buildDoc, type RawItem } from "./layout";
 import { DocIndex, readPdfSelection } from "./select";
+import "pdfjs-dist/web/pdf_viewer.css";
 import "./viewer.css";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -329,7 +330,7 @@ async function renderAll() {
     canvas.style.height = `${Math.floor(viewport.height)}px`;
 
     const layer = document.createElement("div");
-    layer.className = "pv-text";
+    layer.className = "textLayer";
     wrap.append(canvas, layer);
     pagesEl.append(wrap);
 

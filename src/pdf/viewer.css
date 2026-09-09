@@ -142,26 +142,13 @@ body.pv-dragging::after {
   border-radius: 4px;
 }
 
-/* PDF.js 的文字层：透明地盖在画布上，选区就落在这里 */
-.pv-text {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  line-height: 1;
-  forced-color-adjust: none;
-  transform-origin: 0 0;
-}
-
-.pv-text span,
-.pv-text br {
-  color: transparent;
-  position: absolute;
-  white-space: pre;
-  cursor: text;
-  transform-origin: 0% 0%;
-}
-
-.pv-text ::selection {
+/*
+ * 文字层的定位样式全部来自 pdfjs-dist/web/pdf_viewer.css 的 .textLayer。
+ * 它靠 --font-height / --scale-x 这些逐 span 的 CSS 变量算字号和横向缩放，
+ * 手写替代品会让字形位置对不上画布 —— 表现就是"看着选 numerous，
+ * 实际拿到 m in num"。这里只覆盖选中色。
+ */
+.textLayer ::selection {
   background: color-mix(in srgb, var(--pv-accent) 32%, transparent);
 }
 
