@@ -38,9 +38,11 @@ export function worthExplaining(word: string): boolean {
   if (!word) return false;
   if (CJK_ONLY.test(word)) return false;
   if (!MEANINGFUL.test(word)) return false;
-  if (word.length > 200) return false;
+  // 放到两句话的量：英文一句约 25 词 / 150 字符，两句留足余量。
+  // 再往上就是整段了，那多半是误选。
+  if (word.length > 400) return false;
   // 公式没有空格，词数上限会误伤，所以只对散文生效
-  if (PROSE.test(word) && word.split(" ").length > 16) return false;
+  if (PROSE.test(word) && word.split(" ").length > 60) return false;
   return true;
 }
 

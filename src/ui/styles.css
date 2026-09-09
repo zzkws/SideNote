@@ -58,7 +58,7 @@
 .sn-head {
   flex: none;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 10px 14px;
   border-bottom: 1px solid var(--sn-border);
@@ -68,6 +68,7 @@
 
 .sn-badge {
   flex: none;
+  margin-top: 2px;
   width: 20px;
   height: 20px;
   display: grid;
@@ -79,14 +80,19 @@
   font-weight: 700;
 }
 
+/* 选中一两句话时，标题栏折到两行；再长就省略号 */
 .sn-word {
   flex: 1;
   min-width: 0;
   font-weight: 600;
   font-size: 15px;
-  white-space: nowrap;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
 }
 
 .sn-tag {
