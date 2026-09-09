@@ -44,7 +44,8 @@ export default defineManifest({
   },
 
   action: {
-    default_title: "划词旁注 · SideNote 设置",
+    default_title: "划词旁注 · SideNote",
+    default_popup: "src/menu/index.html",
     default_icon: {
       16: "icons/icon16.png",
       32: "icons/icon32.png",
