@@ -128,6 +128,7 @@ export function Popup({ onClose, onOpenOptions, onRetry, onAsk }: Props) {
   return (
     <div class="sn-card" ref={cardRef}>
       <div class="sn-head">
+        <span class="sn-badge">问</span>
         <span class="sn-word">{word.value}</span>
         {busy && <span class="sn-tag">生成中</span>}
         <button class="sn-x" onClick={onClose} title="关闭 (Esc)" type="button">
@@ -154,8 +155,8 @@ export function Popup({ onClose, onOpenOptions, onRetry, onAsk }: Props) {
           <>
             {turns.map((t, i) => (
               <div class={i === 0 ? "sn-turn sn-turn--first" : "sn-turn"} key={i}>
-                {/* 第一轮的「问」就是划中的那个词，跟后面的追问一个形态 */}
-                <div class="sn-q">{i === 0 ? word.value : t.question}</div>
+                {/* 第一轮的问题就是标题栏那个词，这里不再重复 */}
+                {i > 0 && t.question && <div class="sn-q">{t.question}</div>}
                 {t.answer ? (
                   <Markdown source={t.answer} />
                 ) : st === "error" ? null : (
