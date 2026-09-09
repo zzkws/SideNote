@@ -156,7 +156,12 @@ export function Popup({ onClose, onOpenOptions, onRetry, onAsk }: Props) {
             {turns.map((t, i) => (
               <div class={i === 0 ? "sn-turn sn-turn--first" : "sn-turn"} key={i}>
                 {/* 第一轮的问题就是标题栏那个词，这里不再重复 */}
-                {i > 0 && t.question && <div class="sn-q">{t.question}</div>}
+                {i > 0 && t.question && (
+                  <div class="sn-q">
+                    <span class="sn-badge">问</span>
+                    <span class="sn-q-text">{t.question}</span>
+                  </div>
+                )}
                 {t.answer ? (
                   <Markdown source={t.answer} />
                 ) : st === "error" ? null : (

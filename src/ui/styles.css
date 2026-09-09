@@ -60,7 +60,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--sn-border);
   background: var(--sn-bg);
   border-radius: 12px 12px 0 0;
@@ -259,29 +259,26 @@
   border-top: 0;
 }
 
+/* 跟标题栏那一行严格对齐：同样的左边距、同样的徽标、同样的字号字重 */
 .sn-q {
   display: flex;
   gap: 8px;
   align-items: flex-start;
   margin-bottom: 12px;
-  font-weight: 600;
   color: var(--sn-fg);
+}
+
+.sn-q-text {
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
   word-break: break-word;
 }
 
-.sn-q::before {
-  content: "问";
-  flex: none;
-  width: 20px;
-  height: 20px;
+/* 单行文字比徽标高一点，往下压 2px 才和标题栏那颗看齐 */
+.sn-q .sn-badge {
   margin-top: 2px;
-  display: grid;
-  place-items: center;
-  border-radius: 5px;
-  background: var(--sn-accent);
-  color: var(--sn-bg);
-  font-size: 11px;
-  font-weight: 700;
 }
 
 .sn-ask {
