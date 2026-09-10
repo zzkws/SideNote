@@ -1,13 +1,7 @@
 import { loadSettings } from "../shared/settings";
 import { PORT_NAME, type ClientMessage, type ServerMessage } from "../shared/types";
-import { captureRegion } from "./capture";
 import { streamChat } from "./deepseek";
-import {
-  buildFollowupMessages,
-  buildImageMessages,
-  buildMessages,
-  type ChatMessage,
-} from "./prompt";
+import { buildFollowupMessages, buildMessages, type ChatMessage } from "./prompt";
 
 /**
  * API 调用必须在 service worker 里：
@@ -38,23 +32,12 @@ chrome.runtime.onConnect.addListener((port) => {
       chrome.runtime.openOptionsPage();
       return;
     }
-    if (msg.type === "crop") {
-      void captureRegion(msg.rect, msg.dpr)
-        .then((image) => post({ type: "cropped", image }))
-        .catch((e: Error) =>
-          post({
-            type: "cropFailed",
-            message: `截不到这个页面的图：${e.message || "原因不明"}。截图权限是按下 Alt+S 那一刻才授予的，用按钮触发时可能没有。`,
-          }),
-        );
-      return;
-    }
     if (msg.type === "cancel") {
       inflight.get(msg.id)?.abort();
       inflight.delete(msg.id);
       return;
     }
-    if (msg.type !== "explain" && msg.type !== "followup" && msg.type !== "explainImage") return;
+    if (msg.type !== "explain" && msg.type !== "followup") return;
 
     // 快速连续选词：新请求作废旧请求，省钱也省得结果错位
     abortAll();
@@ -64,9 +47,7 @@ chrome.runtime.onConnect.addListener((port) => {
 
   port.onDisconnect.addListener(abortAll);
 
-  async function handleExplain(
-    msg: ClientMessage & { type: "explain" | "followup" | "explainImage" },
-  ) {
+  async function handleExplain(msg: ClientMessage & { type: "explain" | "followup" }) {
     const settings = await loadSettings();
     if (!settings.apiKey) {
       post({
@@ -81,14 +62,8 @@ chrome.runtime.onConnect.addListener((port) => {
     const messages =
       msg.type === "followup"
         ? buildFollowupMessages(msg, msg.prior, msg.question)
-        : msg.type === "explainImage"
-          ? buildImageMessages(msg)
-          : buildMessages(msg);
-    if (settings.debug) {
-      const label =
-        msg.type === "followup" ? msg.question : msg.type === "explainImage" ? "[框选区域]" : msg.word;
-      dumpContext(label, messages);
-    }
+        : buildMessages(msg);
+    if (settings.debug) dumpContext(msg.type === "followup" ? msg.question : msg.word, messages);
 
     const ctrl = new AbortController();
     inflight.set(msg.id, ctrl);
@@ -133,19 +108,6 @@ function dumpContext(word: string, messages: ChatMessage[]) {
 
   console.groupEnd();
 }
-
-chrome.commands.onCommand.addListener((cmd) => {
-  if (cmd !== "capture-region") return;
-  // 按下快捷键这一刻 activeTab 才被授予，通知前台进入框选。
-  // 两条路都要走：tabs.sendMessage 只送到 content script（普通网页），
-  // 扩展自己的页面（PDF 阅读器）得靠 runtime.sendMessage。
-  void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-    if (tab?.id !== undefined) {
-      chrome.tabs.sendMessage(tab.id, { type: "enterCapture" }).catch(() => {});
-    }
-  });
-  chrome.runtime.sendMessage({ type: "enterCapture" }).catch(() => {});
-});
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") chrome.runtime.openOptionsPage();

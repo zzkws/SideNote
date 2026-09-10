@@ -9,8 +9,6 @@ export interface Conversation {
   title: string;
   url: string;
   at: number;
-  /** 框选提问时的那块画面，data URL；划词提问时没有 */
-  shot?: string;
   turns: Turn[];
 }
 

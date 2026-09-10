@@ -1,13 +1,8 @@
-import type { ImageQuery, PriorTurn, Query } from "../shared/types";
-
-/** 一条消息里可以图文混排，视觉理解就靠这个 */
-export type ContentPart =
-  | { type: "text"; text: string }
-  | { type: "image_url"; image_url: { url: string } };
+import type { PriorTurn, Query } from "../shared/types";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
-  content: string | ContentPart[];
+  content: string;
 }
 
 /**
@@ -83,24 +78,7 @@ const SYSTEM = `你是一位英语功底极好、同时精通各学科行话的�
 不要重复前面已经说过的话。长度随需要，讲透比讲长重要。
 
 
-━━━━━━ 情形三 · 框选一块画面 ━━━━━━
-
-用户在页面上框了一块区域截图发过来，多半是一张插图、一个图表、一张表格，或者一段排版成图片的公式。
-连同截图一起给你的还有框附近的文字，图注通常在里面。
-
-先说这是什么：图表就说清横轴纵轴各是什么、有几条线／几组柱子、单位是什么；
-示意图就说清画了哪些部件、箭头指向表示什么流程；表格就说清行列各代表什么。
-
-再说它想让你看出什么。一张图放进论文总是为了支持某个判断 ——
-是"我们的方法更好"，还是"这个量随规模增长"，还是"两种设计的差别在这儿"。
-把那个判断说出来，并指出图上哪一处是证据。
-
-图上的英文标签、缩写、坐标轴名称，凡是可能挡住理解的，顺带译一下、解释一下。
-看不清的地方就直说看不清，不要猜。
-
-不套三块骨架。用平实的中文，讲清楚就收住。
-
-━━━━━━ 三种情形都适用 ━━━━━━
+━━━━━━ 两种情形都适用 ━━━━━━
 
 数学符号和公式用 LaTeX 写，并用 $ 包起来：行内写 $X_l$，单独成行写 $$...$$。
 
@@ -201,24 +179,6 @@ function snapEnd(a: string, i: number): number {
 /**
  * 一条 system + 一条 user。上文排在选中词之前，缓存才吃得到前缀。
  */
-/**
- * 框选的图像消息。图放在文字之前 —— 模型先看到画面，再读框附近的文字，
- * 后者主要是图注，用来对齐它看到的东西。
- */
-export function buildImageMessages(q: ImageQuery): ChatMessage[] {
-  const lines = [`【文章】${q.title}`, "", "【框附近的文字】", q.nearby || "（框附近没有可读的文字）"];
-  return [
-    { role: "system", content: SYSTEM },
-    {
-      role: "user",
-      content: [
-        { type: "image_url", image_url: { url: q.image } },
-        { type: "text", text: lines.join("\n") },
-      ],
-    },
-  ];
-}
-
 /**
  * 追问沿用同一份 system —— 里面已经把"首次划词"和"追问"分成两种情形写清楚了。
  * 不另起一份的好处是前缀原样不动，上文和首答照样命中缓存。

@@ -13,7 +13,6 @@ import {
   type Settings,
 } from "../shared/types";
 import { Popup } from "../ui/Popup";
-import { selectRegion, textNear } from "../ui/region";
 import {
   anchor,
   appendDelta,
@@ -22,7 +21,6 @@ import {
   pushTurn,
   status,
   thread,
-  shot,
   truncated,
   visible,
   word,
@@ -104,23 +102,6 @@ function send(msg: ClientMessage) {
 }
 
 function onServerMessage(msg: ServerMessage) {
-  if (msg.type === "enterCapture") {
-    startRegionSelect();
-    return;
-  }
-  if (msg.type === "cropFailed") {
-    word.value = "框选失败";
-    shot.value = null;
-    thread.value = [{ question: null, answer: "" }];
-    failure.value = { code: "unknown", message: msg.message };
-    status.value = "error";
-    visible.value = true;
-    return;
-  }
-  if (msg.type === "cropped") {
-    onCropped(msg.image);
-    return;
-  }
   if (msg.id !== currentId) return;
   switch (msg.type) {
     case "delta":
@@ -172,66 +153,19 @@ function askFollowup(question: string) {
 
 /** 一轮答完就落盘。追问会覆盖同一条记录，所以历史里是完整的一次对话 */
 function persist() {
-  if (!convId) return;
+  const q = lastQuery;
+  if (!q || !convId) return;
   const turns = thread.value;
   if (!turns.length || !turns[0].answer) return;
-  const q = lastQuery;
   void saveConversation({
     id: convId,
-    word: q ? q.word : "框选的一块画面",
-    sentence: q ? q.sentence : "",
-    title: q ? q.title : document.title,
-    url: q ? q.url : location.href,
+    word: q.word,
+    sentence: q.sentence,
+    title: q.title,
+    url: q.url,
     at: Date.now(),
-    shot: shot.value ?? undefined,
     turns,
   });
-}
-
-/* ---------------- 框选一块画面 ---------------- */
-
-let pendingNearby = "";
-
-function startRegionSelect() {
-  selectRegion(
-    (rect) => {
-      // 框附近的文字要在截图之前收集：遮罩一撤，坐标还是这一套
-      pendingNearby = textNear(rect);
-      send({
-        type: "crop",
-        rect: { x: rect.x, y: rect.y, w: rect.width, h: rect.height },
-        dpr: window.devicePixelRatio || 1,
-      });
-    },
-    () => {
-      pendingNearby = "";
-    },
-  );
-}
-
-/** 裁好的图回来了，连同框附近的文字一起问出去 */
-function onCropped(image: string) {
-  currentId = crypto.randomUUID();
-  convId = currentId;
-  lastQuery = null; // 图像这一轮不复用划词的上下文
-
-  word.value = "这块区域";
-  shot.value = image;
-  thread.value = [{ question: null, answer: "" }];
-  failure.value = null;
-  truncated.value = false;
-  status.value = "loading";
-  visible.value = true;
-
-  send({
-    type: "explainImage",
-    id: currentId,
-    image,
-    nearby: pendingNearby,
-    title: document.title,
-    url: location.href,
-  });
-  pendingNearby = "";
 }
 
 function close() {
@@ -259,10 +193,6 @@ function applySettings(s: Settings) {
   placement.value = s.placement;
 }
 if (inExtension) {
-  // 阅读器是扩展自己的页面，没有 content script，快捷键的消息要自己接
-  chrome.runtime.onMessage.addListener((m: { type?: string }) => {
-    if (m?.type === "enterCapture") startRegionSelect();
-  });
   void loadSettings().then(applySettings);
   chrome.storage.onChanged.addListener(() => {
     void loadSettings().then(applySettings);
@@ -355,13 +285,7 @@ function buildChrome(): HTMLDivElement {
     void renderAll();
   };
 
-  const capture = document.createElement("button");
-  capture.className = "pv-open";
-  capture.textContent = "框选提问";
-  capture.title = "框住一张图问它是什么（Alt+S）";
-  capture.onclick = () => startRegionSelect();
-
-  bar.append(brand, name, zoomSel, capture, label);
+  bar.append(brand, name, zoomSel, label);
 
   const pages = document.createElement("div");
   pages.className = "pv-pages";

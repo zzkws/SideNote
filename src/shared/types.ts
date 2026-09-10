@@ -52,21 +52,9 @@ export interface PriorTurn {
   content: string;
 }
 
-/** 框选出来的一块区域，连同它周围的文字 */
-export interface ImageQuery {
-  /** 裁好并缩放过的 PNG，data URL */
-  image: string;
-  /** 框里和框附近的文字，图注多半在这儿 */
-  nearby: string;
-  title: string;
-  url: string;
-}
-
 export type ClientMessage =
   | ({ type: "explain"; id: string } & Query)
   | ({ type: "followup"; id: string; question: string; prior: PriorTurn[] } & Query)
-  | ({ type: "explainImage"; id: string } & ImageQuery)
-  | { type: "crop"; rect: { x: number; y: number; w: number; h: number }; dpr: number }
   | { type: "cancel"; id: string }
   | { type: "openOptions" };
 
@@ -80,9 +68,6 @@ export type ErrorCode =
   | "unknown";
 
 export type ServerMessage =
-  | { type: "cropped"; image: string }
-  | { type: "cropFailed"; message: string }
-  | { type: "enterCapture" }
   | { type: "delta"; id: string; text: string }
   | { type: "done"; id: string; truncated?: boolean }
   | { type: "error"; id: string; code: ErrorCode; message: string };
