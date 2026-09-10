@@ -81,6 +81,7 @@ export type ErrorCode =
 
 export type ServerMessage =
   | { type: "cropped"; image: string }
+  | { type: "cropFailed"; message: string }
   | { type: "enterCapture" }
   | { type: "delta"; id: string; text: string }
   | { type: "done"; id: string; truncated?: boolean }

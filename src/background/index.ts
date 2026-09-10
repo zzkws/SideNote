@@ -41,8 +41,11 @@ chrome.runtime.onConnect.addListener((port) => {
     if (msg.type === "crop") {
       void captureRegion(msg.rect, msg.dpr)
         .then((image) => post({ type: "cropped", image }))
-        .catch(() =>
-          post({ type: "error", id: "", code: "unknown", message: "截图失败，换个页面再试。" }),
+        .catch((e: Error) =>
+          post({
+            type: "cropFailed",
+            message: `截不到这个页面的图：${e.message || "原因不明"}。截图权限是按下 Alt+S 那一刻才授予的，用按钮触发时可能没有。`,
+          }),
         );
       return;
     }
@@ -133,10 +136,15 @@ function dumpContext(word: string, messages: ChatMessage[]) {
 
 chrome.commands.onCommand.addListener((cmd) => {
   if (cmd !== "capture-region") return;
-  // 按下快捷键这一刻 activeTab 才被授予，通知前台进入框选
+  // 按下快捷键这一刻 activeTab 才被授予，通知前台进入框选。
+  // 两条路都要走：tabs.sendMessage 只送到 content script（普通网页），
+  // 扩展自己的页面（PDF 阅读器）得靠 runtime.sendMessage。
   void chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-    if (tab?.id !== undefined) void chrome.tabs.sendMessage(tab.id, { type: "enterCapture" });
+    if (tab?.id !== undefined) {
+      chrome.tabs.sendMessage(tab.id, { type: "enterCapture" }).catch(() => {});
+    }
   });
+  chrome.runtime.sendMessage({ type: "enterCapture" }).catch(() => {});
 });
 
 chrome.runtime.onInstalled.addListener((details) => {

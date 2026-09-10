@@ -108,6 +108,15 @@ function onServerMessage(msg: ServerMessage) {
     startRegionSelect();
     return;
   }
+  if (msg.type === "cropFailed") {
+    word.value = "框选失败";
+    shot.value = null;
+    thread.value = [{ question: null, answer: "" }];
+    failure.value = { code: "unknown", message: msg.message };
+    status.value = "error";
+    visible.value = true;
+    return;
+  }
   if (msg.type === "cropped") {
     onCropped(msg.image);
     return;
