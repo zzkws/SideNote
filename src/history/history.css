@@ -133,3 +133,12 @@ button.mini, a.mini {
 button.mini:hover, a.mini:hover { border-color: var(--h-accent); color: var(--h-accent); }
 
 .empty { padding: 70px 20px; text-align: center; color: var(--h-muted); }
+
+.shot {
+  display: block;
+  max-width: 100%;
+  margin: 14px 0 4px;
+  border: 1px solid var(--h-border);
+  border-radius: 8px;
+  background: #fff;
+}

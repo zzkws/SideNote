@@ -5,6 +5,7 @@ import {
   anchor,
   failure,
   placement,
+  shot,
   status,
   thread,
   truncated,
@@ -63,6 +64,7 @@ export function Popup({ onClose, onOpenOptions, onRetry, onAsk }: Props) {
   const turns = thread.value;
   const err = failure.value;
   const cut = truncated.value;
+  const pic = shot.value;
 
   const busy = st === "loading" || st === "streaming";
 
@@ -163,6 +165,7 @@ export function Popup({ onClose, onOpenOptions, onRetry, onAsk }: Props) {
           </div>
         ) : (
           <>
+            {pic && <img class="sn-shot" src={pic} alt="框选的区域" />}
             {turns.map((t, i) => (
               <div class={i === 0 ? "sn-turn sn-turn--first" : "sn-turn"} key={i}>
                 {/* 第一轮的问题就是标题栏那个词，这里不再重复 */}

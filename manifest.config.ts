@@ -8,7 +8,9 @@ export default defineManifest({
   description: pkg.description,
 
   // 最小权限：storage 存 API Key，activeTab 用于点击图标打开设置
-  permissions: ["storage"],
+  // activeTab 只在用户按下快捷键那一刻临时授予，够 captureVisibleTab 用，
+  // 不必要 <all_urls> 那种大权限
+  permissions: ["storage", "activeTab"],
   host_permissions: ["https://api.deepseek.com/*"],
 
   background: {
@@ -24,6 +26,13 @@ export default defineManifest({
       all_frames: false, // iframe 内暂不支持
     },
   ],
+
+  commands: {
+    "capture-region": {
+      suggested_key: { default: "Alt+S" },
+      description: "框选一块区域，问它是什么",
+    },
+  },
 
   options_page: "src/options/index.html",
 

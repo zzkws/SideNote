@@ -13,6 +13,8 @@ export const anchor = signal<Range | null>(null);
 export const thread = signal<Turn[]>([]);
 export const status = signal<Status>("loading");
 export const failure = signal<{ code: ErrorCode; message: string } | null>(null);
+/** 这一轮问的如果是框选的画面，缩略图放这儿 */
+export const shot = signal<string | null>(null);
 /** 最后一轮是不是撞上限被切断的 */
 export const truncated = signal(false);
 

@@ -100,6 +100,7 @@ function App() {
 
                 {expanded && (
                   <div class="body">
+                    {c.shot && <img class="shot" src={c.shot} alt="框选的区域" />}
                     {c.sentence && <div class="ctx">{c.sentence}</div>}
                     {c.turns.map((t, i) => (
                       <div key={i}>

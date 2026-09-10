@@ -356,3 +356,13 @@
   color: var(--sn-muted);
   font-size: 12.5px;
 }
+
+/* 框选提问时，把那块画面放在答案上面 */
+.sn-shot {
+  display: block;
+  width: 100%;
+  margin: 0 0 14px;
+  border: 1px solid var(--sn-border);
+  border-radius: 8px;
+  background: #fff;
+}

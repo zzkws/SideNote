@@ -27,7 +27,7 @@ function Menu() {
         <span>API Key、模型、浮层位置、触发方式。</span>
       </button>
 
-      <div class="m-foot">网页上直接划词即可，不用打开这个菜单。</div>
+      <div class="m-foot">网页上直接划词即可。按 Alt+S 可以框住一张图问它是什么。</div>
     </>
   );
 }
