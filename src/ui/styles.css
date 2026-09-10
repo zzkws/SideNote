@@ -346,3 +346,13 @@
   color: var(--sn-danger);
   font-size: 13px;
 }
+
+/* 撞到输出上限被切断时的提示 */
+.sn-cut {
+  margin: 14px 0 0;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: var(--sn-subtle);
+  color: var(--sn-muted);
+  font-size: 12.5px;
+}

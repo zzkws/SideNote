@@ -69,5 +69,5 @@ export type ErrorCode =
 
 export type ServerMessage =
   | { type: "delta"; id: string; text: string }
-  | { type: "done"; id: string }
+  | { type: "done"; id: string; truncated?: boolean }
   | { type: "error"; id: string; code: ErrorCode; message: string };

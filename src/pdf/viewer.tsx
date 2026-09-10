@@ -21,6 +21,7 @@ import {
   pushTurn,
   status,
   thread,
+  truncated,
   visible,
   word,
 } from "../ui/store";
@@ -109,6 +110,7 @@ function onServerMessage(msg: ServerMessage) {
       break;
     case "done":
       status.value = "done";
+      truncated.value = Boolean(msg.truncated);
       void persist();
       break;
     case "error":
@@ -126,6 +128,7 @@ function ask(q: Query & { range: Range }) {
   anchor.value = q.range;
   thread.value = [{ question: null, answer: "" }];
   failure.value = null;
+  truncated.value = false;
   status.value = "loading";
   visible.value = true;
   const { range: _r, ...payload } = q;
@@ -142,6 +145,7 @@ function askFollowup(question: string) {
   currentId = crypto.randomUUID();
   pushTurn(question);
   failure.value = null;
+  truncated.value = false;
   status.value = "loading";
   const { range: _r, ...payload } = lastQuery;
   send({ type: "followup", id: currentId, question, prior, ...payload });

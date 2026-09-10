@@ -1,7 +1,16 @@
 import { autoUpdate } from "@floating-ui/dom";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { Markdown } from "./Markdown";
-import { anchor, failure, placement, status, thread, visible, word } from "./store";
+import {
+  anchor,
+  failure,
+  placement,
+  status,
+  thread,
+  truncated,
+  visible,
+  word,
+} from "./store";
 
 interface Props {
   onClose(): void;
@@ -53,6 +62,7 @@ export function Popup({ onClose, onOpenOptions, onRetry, onAsk }: Props) {
   const st = status.value;
   const turns = thread.value;
   const err = failure.value;
+  const cut = truncated.value;
 
   const busy = st === "loading" || st === "streaming";
 
@@ -179,6 +189,9 @@ export function Popup({ onClose, onOpenOptions, onRetry, onAsk }: Props) {
               </div>
             ))}
             {st === "streaming" && <span class="sn-caret" />}
+            {cut && st === "done" && (
+              <p class="sn-cut">答案太长被截断了。在下面追问「接着说」可以让它续下去。</p>
+            )}
           </>
         )}
       </div>

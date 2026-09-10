@@ -18,7 +18,9 @@ export function buildRequestBody(settings: Settings, messages: ChatMessage[]) {
     stream_options: { include_usage: true },
     // DeepSeek 的 temperature 映射与 OpenAI 不同；释义任务要稳，取偏低值
     temperature: 0.6,
-    max_tokens: 600,
+    // 追问是教学式的，会很长。上限给足，实际长度交给模型决定 ——
+    // 之前设 600 会把讲到一半的回答直接切断，而且看不出是被切的。
+    max_tokens: 8192,
     // v4-flash 默认先思考，实测多等 5-10 秒，而思考内容我们本就丢弃；
     // 关掉后 prompt 还少 ~79 tok（少了思考模式的系统前缀）
     ...(settings.deepThinking ? {} : { reasoning_effort: "none" as const }),
@@ -27,7 +29,8 @@ export function buildRequestBody(settings: Settings, messages: ChatMessage[]) {
 
 export interface StreamHandlers {
   onDelta(text: string): void;
-  onDone(): void;
+  /** truncated 为真表示答案是撞上限被切的，不是自然说完 */
+  onDone(truncated: boolean): void;
   onError(code: ErrorCode, message: string): void;
   onUsage?(usage: Usage): void;
 }
@@ -69,6 +72,7 @@ export async function streamChat(
   const decoder = new TextDecoder();
   let buffer = "";
   let finished = false;
+  let stopReason: string | null = null;
 
   const consume = (data: string) => {
     if (data === "[DONE]") {
@@ -77,8 +81,11 @@ export async function streamChat(
     }
     try {
       const json = JSON.parse(data);
-      const delta: string | undefined = json?.choices?.[0]?.delta?.content;
+      const choice = json?.choices?.[0];
+      const delta: string | undefined = choice?.delta?.content;
       if (delta) h.onDelta(delta);
+      // "length" 表示是撞上限被切的，不是自然说完
+      if (choice?.finish_reason) stopReason = choice.finish_reason as string;
       // 最后一个 chunk 带 usage，choices 为空数组
       if (json?.usage) h.onUsage?.(json.usage as Usage);
     } catch {
@@ -108,7 +115,7 @@ export async function streamChat(
     return;
   }
 
-  h.onDone();
+  h.onDone(stopReason === "length");
 }
 
 function mapStatus(status: number, detail: string): [ErrorCode, string] {

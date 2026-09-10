@@ -70,9 +70,9 @@ chrome.runtime.onConnect.addListener((port) => {
 
     await streamChat(settings, messages, ctrl.signal, {
       onDelta: (text) => post({ type: "delta", id: msg.id, text }),
-      onDone: () => {
+      onDone: (truncated) => {
         inflight.delete(msg.id);
-        post({ type: "done", id: msg.id });
+        post({ type: "done", id: msg.id, truncated });
       },
       onError: (code, message) => {
         inflight.delete(msg.id);
