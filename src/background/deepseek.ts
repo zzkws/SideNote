@@ -11,8 +11,13 @@ export interface Usage {
 
 /** 抽出来供测试复用，保证测的就是线上发出去的那个 body */
 export function buildRequestBody(settings: Settings, messages: ChatMessage[]) {
+  const hasImages = messages.some(m => Array.isArray(m.content) &&
+    m.content.some(part => part.type === "image_url"));
   return {
-    model: settings.model,
+    // 视觉模型是独立的实验型号；只有真的带页图时才切换，纯文字查询保持用户选择。
+    model: hasImages && settings.model === "deepseek-v4-flash"
+      ? "deepseek-v4-flash-vision-exp"
+      : settings.model,
     messages,
     stream: true,
     stream_options: { include_usage: true },

@@ -21,16 +21,16 @@ jobs:
 
       - run: npm ci
       - run: npm run build
-      - run: cd dist && zip -r ../sidenote.zip .
+      - run: cd dist && zip -r ../deepseek-reading-companion.zip .
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: sidenote.zip
+          files: deepseek-reading-companion.zip
           generate_release_notes: true
           body: |
             ## 安装
 
-            1. 下载下面的 `sidenote.zip` 并解压
+            1. 下载下面的 `deepseek-reading-companion.zip` 并解压
             2. 打开 `chrome://extensions`，右上角开启**开发者模式**
             3. 点**加载已解压的扩展程序**，选中解压出来的文件夹
             4. 设置页会自动打开，填入你自己的 [DeepSeek API Key](https://platform.deepseek.com/api_keys)

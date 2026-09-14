@@ -28,6 +28,7 @@ import {
 import css from "../ui/styles.css?inline";
 import { buildDoc, type RawItem } from "./layout";
 import { DocIndex, readPdfSelection } from "./select";
+import { PdfVisualContext, visualPages } from "./visual";
 import "pdfjs-dist/web/pdf_viewer.css";
 import "./viewer.css";
 
@@ -48,11 +49,12 @@ function outputScale(): number {
 const app = document.getElementById("app") as HTMLDivElement;
 let index: DocIndex | null = null;
 let docTitle = "";
+let visualContext = new PdfVisualContext();
 
 /* ---------------- 浮层：跟网页版共用同一套 UI ---------------- */
 
 const host = document.createElement("div");
-host.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;";
+host.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;z-index:2147483647;";
 const shadow = host.attachShadow({ mode: "open" });
 const styleEl = document.createElement("style");
 styleEl.textContent = css;
@@ -120,7 +122,8 @@ function onServerMessage(msg: ServerMessage) {
   }
 }
 
-function ask(q: Query & { range: Range }) {
+async function ask(q: Query & { range: Range }) {
+  if (currentId) send({ type: "cancel", id: currentId });
   lastQuery = q;
   currentId = crypto.randomUUID();
   convId = currentId;
@@ -131,6 +134,20 @@ function ask(q: Query & { range: Range }) {
   truncated.value = false;
   status.value = "loading";
   visible.value = true;
+  const requestId = currentId;
+  // 只有 Flash 发送视觉；Pro 保持其文本能力，不静默更换用户模型。
+  if (settings?.model === "deepseek-v4-flash" && q.pdfPage !== undefined && !q.pdfImages) {
+    try {
+      q.pdfImages = await visualContext.collect(contents.map(c => c.page),
+        visualPages(q.pdfPage, index?.doc.captions.map(c => c.page) ?? []));
+    } catch {
+      if (currentId !== requestId) return;
+      failure.value = { code: "unknown", message: "论文页图像生成失败，请重试。" };
+      status.value = "error";
+      return;
+    }
+  }
+  if (currentId !== requestId) return;
   const { range: _r, ...payload } = q;
   send({ type: "explain", id: currentId, ...payload });
 }
@@ -213,7 +230,9 @@ document.addEventListener(
     debounce = window.setTimeout(() => {
       const pick = readPdfSelection(idx);
       if (!pick) return;
-      ask({ ...pick, article: idx.doc.text, title: docTitle, url: location.href });
+      const pdfCaptions = idx.doc.captions.filter(c => c.page <= pick.pdfPage)
+        .map(c => `第 ${c.page + 1} 页：${c.text}`).join("\n\n");
+      ask({ ...pick, pdfCaptions, article: idx.doc.text, title: docTitle, url: location.href });
     }, 160);
   },
   true,
@@ -255,7 +274,7 @@ function buildChrome(): HTMLDivElement {
 
   const brand = document.createElement("span");
   brand.className = "pv-brand";
-  brand.textContent = "划词旁注 · PDF";
+  brand.textContent = "DeepSeek 伴读 · PDF";
 
   const name = document.createElement("span");
   name.className = "pv-name";
@@ -294,6 +313,12 @@ function buildChrome(): HTMLDivElement {
 }
 
 async function openFile(file: File) {
+  close();
+  index = null;
+  lastQuery = null;
+  observer.disconnect();
+  contents = [];
+  visualContext = new PdfVisualContext();
   docTitle = file.name.replace(/\.pdf$/i, "");
   const buf = new Uint8Array(await file.arrayBuffer());
   const pages = buildChrome();
@@ -307,13 +332,14 @@ async function openFile(file: File) {
 
   // 先把全文抽出来建索引。取文字很快，渲染画布很慢 ——
   // 分两段做，翻到第一页就能查词，不必等整份文档画完。
-  const raw: { width: number; items: RawItem[] }[] = [];
+  const raw: { width: number; height: number; items: RawItem[] }[] = [];
   for (let n = 1; n <= pdf.numPages; n++) {
     const page = await pdf.getPage(n);
     const content = await page.getTextContent();
     contents.push({ page, content });
     raw.push({
       width: page.getViewport({ scale: 1 }).width,
+      height: page.getViewport({ scale: 1 }).height,
       items: content.items.filter((x) => "str" in x) as unknown as RawItem[],
     });
   }
@@ -413,7 +439,7 @@ function showDrop() {
   inner.className = "pv-drop-inner";
 
   const h = document.createElement("h1");
-  h.textContent = "划词旁注 · PDF 阅读器";
+  h.textContent = "DeepSeek 伴读 · PDF 阅读器";
   const p = document.createElement("p");
   p.textContent = "把 PDF 拖进来，或者点下面选一份。";
   const sub = document.createElement("p");

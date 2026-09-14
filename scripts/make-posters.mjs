@@ -8,7 +8,7 @@ const html = `<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>SideNote 海报</title>
+<title>DeepSeek 伴读 · 早期海报存档</title>
 <style>
   body { margin:0; padding:32px; background:#0d0e10; color:#e6e7ea;
          font:14px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif; }
@@ -27,7 +27,7 @@ const html = `<!doctype html>
 </style>
 </head>
 <body>
-<h1>SideNote 小红书海报 · 1080 × 1440</h1>
+<h1>DeepSeek 伴读 · 早期海报存档 · 1080 × 1440</h1>
 <p class="hint">下面是按 1:3 缩小的预览。点「下载」得到的是原始 1080×1440 PNG，可直接发小红书。</p>
 <p class="all"><button id="dl-all">下载全部 5 张</button></p>
 <div class="row" id="row"></div>

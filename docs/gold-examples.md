@@ -1,4 +1,6 @@
-# 金标样例
+# 早期回答样例（存档）
+
+以下保留早期固定模板设计，已不作为当前回答标准。DeepSeek 伴读现使用自然中文段落，规则见 `src/background/prompt.ts`。
 
 取自 [DeepSeek-V4 技术报告](https://arxiv.org/html/2606.19348v1) 的 Abstract 与 §1 Introduction。
 每条按插件真实发出的格式写：`【选中】` + `【所在句】`，然后是理想输出。

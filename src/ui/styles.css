@@ -20,10 +20,18 @@
 
   background: var(--sn-bg);
   border: 1px solid var(--sn-border);
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 12px 40px rgba(0, 0, 0, 0.14);
 
   animation: cl-in 120ms ease-out;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+/* 聚焦环沿整张卡片的外轮廓，输入框内部不再叠第二圈边框。 */
+.sn-card:focus-within {
+  border-color: color-mix(in srgb, var(--sn-accent) 50%, var(--sn-border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sn-accent) 16%, transparent),
+    0 4px 12px rgba(0, 0, 0, 0.08), 0 12px 40px rgba(0, 0, 0, 0.14);
 }
 
 @keyframes cl-in {
@@ -38,18 +46,18 @@
   --sn-muted: #6b7280;
   --sn-border: #e4e6ea;
   --sn-subtle: #f6f7f9;
-  --sn-accent: #2563eb;
+  --sn-accent: #4d6bfe;
   --sn-danger: #dc2626;
 }
 
 @media (prefers-color-scheme: dark) {
   .sn-card {
-    --sn-bg: #1f2023;
+    --sn-bg: #232326;
     --sn-fg: #e6e7ea;
     --sn-muted: #9aa0a8;
     --sn-border: #34363b;
-    --sn-subtle: #2a2c30;
-    --sn-accent: #7aa2f7;
+    --sn-subtle: #2d2d31;
+    --sn-accent: #6d88ff;
     --sn-danger: #f87171;
   }
 }
@@ -63,7 +71,7 @@
   padding: 10px 14px;
   border-bottom: 1px solid var(--sn-border);
   background: var(--sn-bg);
-  border-radius: 12px 12px 0 0;
+  border-radius: 14px 14px 0 0;
 }
 
 .sn-badge {
@@ -106,7 +114,7 @@
 
 .sn-x {
   flex: none;
-  width: 24px;
+  width: 36px;
   height: 24px;
   display: grid;
   place-items: center;
@@ -126,7 +134,7 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 12px 14px 16px;
+  padding: 12px 14px 14px;
 }
 
 .sn-body::-webkit-scrollbar { width: 8px; }
@@ -297,22 +305,26 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 10px 14px 12px;
   border-top: 1px solid var(--sn-border);
   background: var(--sn-bg);
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 0 14px 14px;
 }
 
 .sn-ask input {
   flex: 1;
   min-width: 0;
+  height: 36px;
+  margin: 0;
   padding: 7px 10px;
   border: 1px solid var(--sn-border);
-  border-radius: 7px;
+  border-radius: 10px;
   background: var(--sn-subtle);
   color: var(--sn-fg);
   font: inherit;
   font-size: 13px;
+  line-height: 20px;
+  transition: border-color 120ms ease;
 }
 
 .sn-ask input::placeholder { color: var(--sn-muted); }
@@ -320,26 +332,38 @@
 .sn-ask input:focus {
   outline: none;
   border-color: var(--sn-accent);
+  box-shadow: none;
 }
 
 .sn-ask input:disabled { opacity: 0.5; }
 
 .sn-send {
   flex: none;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
   display: grid;
   place-items: center;
-  border: 0;
-  border-radius: 7px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   background: var(--sn-accent);
   color: var(--sn-bg);
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
 }
 
-.sn-send:disabled { opacity: 0.35; cursor: default; }
+.sn-send svg { display: block; width: 18px; height: 18px; }
+.sn-send:hover:not(:disabled) { background: color-mix(in srgb, var(--sn-accent) 88%, var(--sn-fg)); }
+.sn-send:focus-visible { outline: 2px solid var(--sn-accent); outline-offset: 2px; }
+.sn-send:disabled {
+  background: var(--sn-subtle);
+  border-color: var(--sn-border);
+  color: var(--sn-muted);
+  cursor: default;
+}
 
 .sn-inline-error {
   margin: 8px 0 0;

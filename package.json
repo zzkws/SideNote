@@ -1,9 +1,9 @@
 {
-  "name": "sidenote",
-  "version": "0.1.0",
+  "name": "deepseek-reading-companion",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "读英文文章时划中一个词，给出它在这句话里的意思、英文释意，和它背后的来历",
+  "description": "选中英文词句，让 DeepSeek 结合前后文，沿着原文直接解释。",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

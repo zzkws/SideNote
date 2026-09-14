@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, rmSync } from "node:fs";
 import { platform } from "node:os";
 
-const OUT = "sidenote.zip";
+const OUT = "deepseek-reading-companion.zip";
 if (!existsSync("dist")) {
   console.error("dist/ 不存在，先跑 npm run build");
   process.exit(1);
@@ -14,7 +14,7 @@ if (existsSync(OUT)) rmSync(OUT);
 if (platform() === "win32") {
   execFileSync(
     "powershell",
-    ["-NoProfile", "-Command", `Compress-Archive -Path dist\* -DestinationPath ${OUT}`],
+    ["-NoProfile", "-Command", `Compress-Archive -Path dist/* -DestinationPath ${OUT}`],
     { stdio: "inherit" },
   );
 } else {

@@ -58,8 +58,8 @@ function Options() {
 
   return (
     <div class="wrap">
-      <h1>划词旁注 · SideNote</h1>
-      <p class="sub">划中一个英文词，给出它在这句话里的意思、英文释意，和它背后的来历。</p>
+      <h1>DeepSeek 伴读</h1>
+      <p class="sub">选中英文词句，让 DeepSeek 结合前后文，沿着原文直接解释。</p>
 
       <div class="field">
         <label for="key">DeepSeek API Key</label>

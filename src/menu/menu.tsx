@@ -10,7 +10,7 @@ function Menu() {
 
   return (
     <>
-      <div class="m-title">划词旁注 · SideNote</div>
+      <div class="m-title">DeepSeek 伴读</div>
 
       <button class="m-item" type="button" onClick={() => open("src/pdf/index.html")}>
         <strong>打开 PDF 阅读器</strong>

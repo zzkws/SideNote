@@ -1,4 +1,5 @@
 import { normalize } from "./article";
+import { wholeWordBounds, textPointAt, showCompletedSelection } from "../shared/word-selection";
 
 export interface Pick {
   word: string;
@@ -50,10 +51,12 @@ export function readSelection(): Pick | null {
   const sel = window.getSelection();
   if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
 
-  const word = sel.toString().trim().replace(/\s+/g, " ");
+  if (!worthExplaining(sel.toString().trim().replace(/\s+/g, " "))) return null;
+  const range = completeWebRange(sel.getRangeAt(0));
+  const word = range.toString().replace(/\u00ad/g, "").trim().replace(/\s+/g, " ");
   if (!worthExplaining(word)) return null;
 
-  const range = sel.getRangeAt(0);
+  showCompletedSelection(sel, range);
   const block = nearestBlock(range.startContainer);
   const rawParagraph = block?.textContent ?? word;
 
@@ -65,6 +68,49 @@ export function readSelection(): Pick | null {
     paragraph: normalize(rawParagraph).slice(0, 2000),
     range: range.cloneRange(),
   };
+}
+
+/** 网页在各端点所在段落内补齐，支持单词中间的 em/strong 等行内节点。 */
+function completeWebRange(source: Range): Range {
+  const result = source.cloneRange();
+  for (const edge of ["start", "end"] as const) {
+    const node = edge === "start" ? source.startContainer : source.endContainer;
+    const offset = edge === "start" ? source.startOffset : source.endOffset;
+    const el = node.nodeType === Node.ELEMENT_NODE ? node as Element : node.parentElement;
+    if (el?.closest("math, input, textarea, [contenteditable]:not([contenteditable=false])")) continue;
+    const block = el?.closest<HTMLElement>(PREFERRED_BLOCKS) ?? nearestBlock(node);
+    if (!block) continue;
+    const before = document.createRange();
+    before.selectNodeContents(block);
+    before.setEnd(node, offset);
+    const at = before.toString().length;
+    const text = block.textContent ?? "";
+    // BR 和嵌套块的边界不应把相邻两行/段落的独立单词拼起来。
+    let low = 0, high = text.length;
+    for (const boundary of block.querySelectorAll("br,p,div,li,td,th,blockquote")) {
+      for (const after of [false, true]) {
+        const prefix = document.createRange();
+        prefix.selectNodeContents(block);
+        if (after) prefix.setEndAfter(boundary); else prefix.setEndBefore(boundary);
+        const cut = prefix.toString().length;
+        if (cut < at || (cut === at && edge === "start")) low = Math.max(low, cut);
+        else high = Math.min(high, cut);
+      }
+    }
+    const local = at - low;
+    const bounds = wholeWordBounds(text.slice(low, high),
+      edge === "start" ? local : Math.max(0, local - 1),
+      edge === "start" ? Math.min(high - low, local + 1) : local);
+    // 只往外补字母，不因端点恰好落在空格上而纳入下一个单词。
+    const target = low + (edge === "start" ? bounds.start : bounds.end);
+    if (edge === "start" ? target >= at : target <= at) continue;
+    const point = textPointAt(block, target);
+    if (point) {
+      if (edge === "start") result.setStart(point.node, point.offset);
+      else result.setEnd(point.node, point.offset);
+    }
+  }
+  return result;
 }
 
 /** 选区起点在 block 的 textContent 中的字符偏移 */

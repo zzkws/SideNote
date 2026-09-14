@@ -3,7 +3,7 @@ import pkg from "./package.json";
 
 export default defineManifest({
   manifest_version: 3,
-  name: "划词旁注 · SideNote",
+  name: "DeepSeek 伴读",
   version: pkg.version,
   description: pkg.description,
 
@@ -44,7 +44,7 @@ export default defineManifest({
   },
 
   action: {
-    default_title: "划词旁注 · SideNote",
+    default_title: "DeepSeek 伴读",
     default_popup: "src/menu/index.html",
     default_icon: {
       16: "icons/icon16.png",

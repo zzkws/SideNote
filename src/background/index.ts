@@ -1,7 +1,7 @@
 import { loadSettings } from "../shared/settings";
 import { PORT_NAME, type ClientMessage, type ServerMessage } from "../shared/types";
 import { streamChat } from "./deepseek";
-import { buildFollowupMessages, buildMessages, type ChatMessage } from "./prompt";
+import { buildFollowupMessages, buildMessages, messageText, type ChatMessage } from "./prompt";
 
 /**
  * API 调用必须在 service worker 里：
@@ -82,19 +82,17 @@ chrome.runtime.onConnect.addListener((port) => {
   }
 });
 
-const LABELS = ["① system", "② user 全文", "③ assistant 回执", "④ user 提问"];
-
-/** debug 开关打开时，把真实发出去的四条消息完整打出来 */
+/** debug 开关打开时，把实际发送的每条消息完整打出来。 */
 function dumpContext(word: string, messages: ChatMessage[]) {
-  const chars = messages.reduce((n, m) => n + m.content.length, 0);
-  console.group(`[SideNote] 选中 "${word}" —— 共 ${chars.toLocaleString()} 字符`);
+  const chars = messages.reduce((n, m) => n + messageText(m).length, 0);
+  console.group(`[DeepSeek 伴读] 选中 "${word}" —— 共 ${chars.toLocaleString()} 字符`);
 
   messages.forEach((m, i) => {
     console.log(
-      `%c${LABELS[i]}  role=${m.role}  ${m.content.length.toLocaleString()} 字符`,
+      `%c消息 ${i + 1}  role=${m.role}  ${messageText(m).length.toLocaleString()} 字符`,
       "font-weight:bold;color:#7aa2f7",
     );
-    console.log(m.content);
+    console.log(messageText(m));
   });
 
   console.log(
@@ -102,7 +100,7 @@ function dumpContext(word: string, messages: ChatMessage[]) {
     "font-weight:bold;color:#f7768e",
   );
   const joined = messages
-    .map((m, i) => `===== ${LABELS[i]}  (role=${m.role}) =====\n${m.content}`)
+    .map((m, i) => `===== 消息 ${i + 1}  (role=${m.role}) =====\n${messageText(m)}`)
     .join("\n\n");
   console.log(joined);
 

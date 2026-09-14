@@ -20,6 +20,8 @@ export interface ItemSpan {
   index: number;
   start: number;
   end: number;
+  /** 原始 DOM 字符边界到清理后 item 内偏移的映射（含连字和断词）。 */
+  offsets?: number[];
 }
 
 export interface Doc {
@@ -27,6 +29,8 @@ export interface Doc {
   text: string;
   /** 与 text 对齐的 item 索引，用来把 DOM 选区换算成正文偏移 */
   spans: ItemSpan[];
+  captions: { page: number; text: string }[];
+  bodyEnd: number;
 }
 
 interface Frag {
@@ -37,6 +41,18 @@ interface Frag {
   y: number;
   w: number;
   h: number;
+  offsets: number[];
+}
+
+export function cleanFragment(raw: string): { text: string; offsets: number[] } {
+  let text = "";
+  const offsets = [0];
+  for (const ch of raw) {
+    const next = /[ﬀ-ﬆ]/.test(ch) ? ch.normalize("NFKC") : ch === "\u00ad" ? "" : /\s/.test(ch) ? " " : ch;
+    text += next;
+    for (let i = 0; i < ch.length; i++) offsets.push(text.length);
+  }
+  return { text, offsets };
 }
 
 /** 同一行的纵向容差，取字高的比例 */
@@ -53,12 +69,16 @@ const INDENT = 0.6;
 function toFrags(page: number, items: RawItem[]): Frag[] {
   const out: Frag[] = [];
   items.forEach((it, index) => {
-    if (!it.str) return;
+    if (!it.str.trim()) return;
+    // arXiv 的侧边旋转版本水印，不属于论文正文。
+    if (/arXiv:/i.test(it.str) && Math.abs(it.transform[1]) > Math.abs(it.transform[0])) return;
+    const cleaned = cleanFragment(it.str);
     const h = Math.abs(it.transform[3]) || it.height || 10;
     out.push({
       page,
       index,
-      str: it.str,
+      str: cleaned.text,
+      offsets: cleaned.offsets,
       x: it.transform[4],
       y: it.transform[5],
       w: it.width,
@@ -122,15 +142,27 @@ function orderGroups(frags: Frag[], pageWidth: number): Frag[][] {
   const gutter = findGutter(frags, pageWidth);
   if (gutter === null) return [frags];
 
-  const full: Frag[] = [];
-  const left: Frag[] = [];
-  const right: Frag[] = [];
-  for (const f of frags) {
-    if (f.x < gutter && f.x + f.w > gutter) full.push(f);
-    else if (f.x + f.w / 2 < gutter) left.push(f);
-    else right.push(f);
+  // 跨栏内容按纵向位置切带；同一行的作者、邮箱、公式碎片一起处理。
+  // 不能把所有跨中缝的 item 提到最前，否则会拆散作者行和跨栏图注。
+  const anchors = frags.filter(f => f.x < gutter - 2 && f.x + f.w > gutter + 2 && f.str.length > 12);
+  const fullLines = toLines(frags.filter(f => anchors.some(a => Math.abs(a.y - f.y) < Math.max(a.h, f.h) * 0.65)));
+  const fullSet = new Set(fullLines.flat());
+  const groups: Frag[][] = [];
+  let remaining = frags.filter(f => !fullSet.has(f));
+  const columns = (part: Frag[]) => {
+    const left = part.filter(f => f.x + f.w / 2 < gutter);
+    const right = part.filter(f => f.x + f.w / 2 >= gutter);
+    if (left.length) groups.push(left);
+    if (right.length) groups.push(right);
+  };
+  for (const line of fullLines) {
+    const y = line[0].y;
+    columns(remaining.filter(f => f.y > y));
+    remaining = remaining.filter(f => f.y <= y);
+    groups.push(line);
   }
-  return [full, left, right].filter((g) => g.length > 0);
+  columns(remaining);
+  return groups;
 }
 
 /** 同一栏内按 y 聚行 */
@@ -164,8 +196,39 @@ function joinLine(line: Frag[]): { text: string; parts: { frag: Frag; at: number
   return { text, parts };
 }
 
-export function buildDoc(pages: { width: number; items: RawItem[] }[]): Doc {
+/** 图注按自身的栏宽和行距成组，避免截断跨栏正文。 */
+function splitCaptions(frags: Frag[], width: number) {
+  const gutter = findGutter(frags, width);
+  const used = new Set<Frag>();
+  const captions: Frag[][] = [];
+  for (const anchor of frags.filter(f => /^(?:Figure|Fig\.|Table)\s+\d+[.:]/i.test(f.str))) {
+    if (used.has(anchor)) continue;
+    const row = frags.filter(f => Math.abs(f.y - anchor.y) < anchor.h * 0.55);
+    const beforeGutter = Math.max(...row.filter(f => f.x < (gutter ?? width)).map(f => f.x + f.w));
+    const afterGutter = Math.min(...row.filter(f => f.x >= (gutter ?? width)).map(f => f.x));
+    const full = gutter === null || beforeGutter > gutter + 2 || afterGutter - beforeGutter < anchor.h;
+    const left = gutter !== null && anchor.x < gutter;
+    const candidates = frags.filter(f => !used.has(f) && f.y <= anchor.y + anchor.h * 0.5 &&
+      (full || (left ? f.x + f.w / 2 < gutter! : f.x + f.w / 2 >= gutter!)));
+    const caption: Frag[] = [];
+    let previousY = anchor.y;
+    for (const line of toLines(candidates)) {
+      if (previousY - line[0].y > anchor.h * 1.8 || Math.max(...line.map(f => f.h)) > anchor.h * 1.2) break;
+      if (caption.length && line.some(f => /^(?:Figure|Fig\.|Table)\s+\d+[.:]/i.test(f.str))) break;
+      caption.push(...line);
+      previousY = line[0].y;
+    }
+    if (caption.length) {
+      caption.forEach(f => used.add(f));
+      captions.push(caption);
+    }
+  }
+  return { body: frags.filter(f => !used.has(f)), captions };
+}
+
+export function buildDoc(pages: { width: number; height?: number; items: RawItem[] }[]): Doc {
   const blocks: { text: string; spans: ItemSpan[] }[] = [];
+  const captionKeys = new Set<string>();
   let buf = "";
   let bufSpans: ItemSpan[] = [];
 
@@ -187,10 +250,14 @@ export function buildDoc(pages: { width: number; items: RawItem[] }[]): Doc {
 
   pages.forEach((pg, pi) => {
     const frags = toFrags(pi, pg.items);
-    for (const column of orderGroups(frags, pg.width)) {
+    const separated = splitCaptions(frags, pg.width);
+    for (const caption of separated.captions) for (const f of caption) captionKeys.add(`${f.page}:${f.index}`);
+    for (const column of [...orderGroups(separated.body, pg.width), ...separated.captions]) {
+      const isCaption = captionKeys.has(`${column[0].page}:${column[0].index}`);
       const lines = toLines(column)
         .map((l) => ({ l, t: joinLine(l).text.trim() }))
-        .filter((x) => x.t && !/^[0-9]{1,5}$/.test(x.t)) // 页码之类的孤立数字
+        .filter((x) => x.t && !(pg.height && /^[0-9]{1,5}$/.test(x.t) &&
+          (x.l[0].y < pg.height * 0.06 || x.l[0].y > pg.height * 0.96)))
         .map((x) => x.l);
       if (!lines.length) continue;
 
@@ -206,12 +273,15 @@ export function buildDoc(pages: { width: number; items: RawItem[] }[]): Doc {
         const { text, parts } = joinLine(line);
         const prev = i > 0 ? lines[i - 1] : null;
 
-        if (prev && breaksParagraph(prev, line, rights[i - 1], localRight[i], localLeft[i])) {
+        if (prev && !isCaption && breaksParagraph(prev, line, rights[i - 1], localRight[i], localLeft[i])) {
           flush();
         }
 
         // 行末连字符：跟下一行接上，不留 "-"
-        if (/[-‐]$/.test(buf) && /^[a-z]/.test(text)) buf = buf.slice(0, -1);
+        if (/[-‐]$/.test(buf) && /^[a-z]/.test(text)) {
+          buf = buf.slice(0, -1);
+          clampSpans(bufSpans, buf.length);
+        }
         else if (buf && !/\s$/.test(buf)) buf += " ";
 
         const base = buf.length;
@@ -221,6 +291,7 @@ export function buildDoc(pages: { width: number; items: RawItem[] }[]): Doc {
             index: p.frag.index,
             start: base + p.at,
             end: base + p.at + p.frag.str.length,
+            offsets: p.frag.offsets,
           });
         }
         buf += text;
@@ -230,7 +301,26 @@ export function buildDoc(pages: { width: number; items: RawItem[] }[]): Doc {
   });
   flush();
 
-  return assemble(merge(blocks));
+  // 图注是独立的浮动内容。保留全文和索引，集中放到正文后，避免插进跨栏/跨页句子。
+  const body: typeof blocks = [];
+  const captions: typeof blocks = [];
+  for (const block of blocks) {
+    if (block.spans.some(s => captionKeys.has(`${s.page}:${s.index}`))) captions.push(block);
+    else body.push(block);
+  }
+  const main = merge(body);
+  const bodyEnd = assemble(main).text.length;
+  return { ...assemble([...main, ...captions]), bodyEnd,
+    captions: captions.map(b => ({ page: b.spans[0].page, text: b.text })) };
+}
+
+function clampSpans(spans: ItemSpan[], end: number) {
+  for (const sp of spans) {
+    if (sp.end > end) {
+      sp.end = end;
+      sp.offsets = sp.offsets?.map(n => Math.min(n, Math.max(0, end - sp.start)));
+    }
+  }
 }
 
 /**
@@ -247,12 +337,19 @@ function merge(blocks: { text: string; spans: ItemSpan[] }[]) {
   for (const b of blocks) {
     const prev = out[out.length - 1];
     const isTail = /^[a-z,;:)\]]/.test(b.text);
-    const bothShort = Boolean(prev) && prev.text.length < SHORT && b.text.length < SHORT;
+    const bothShort = Boolean(prev) && prev.text.length < SHORT && b.text.length < SHORT &&
+      !/[.!?:]$/.test(prev.text) && !/^\d+[.\s]|^(?:Abstract|References|Acknowledgments)$/i.test(b.text);
+    const continuation = Boolean(prev) && /[a-z,]$/.test(prev.text) &&
+      !/^\d+[.\s]|^(?:Abstract|References|Acknowledgments)$/i.test(b.text) &&
+      prev.spans.at(-1)?.page !== b.spans[0]?.page;
 
-    if (prev && (isTail || bothShort)) {
+    if (prev && (isTail || bothShort || continuation)) {
       // 上一块以连字符收尾说明词被断开了，直接接上不留空格
       const hyphen = isTail && /[-‐]$/.test(prev.text);
-      if (hyphen) prev.text = prev.text.slice(0, -1);
+      if (hyphen) {
+        prev.text = prev.text.slice(0, -1);
+        clampSpans(prev.spans, prev.text.length);
+      }
       const glue = hyphen ? "" : " ";
       const base = prev.text.length + glue.length;
       prev.text += glue + b.text;
@@ -267,7 +364,7 @@ function merge(blocks: { text: string; spans: ItemSpan[] }[]) {
 }
 
 /** 拼成最终正文，并把每个 item 的区间换算成全文偏移 */
-function assemble(blocks: { text: string; spans: ItemSpan[] }[]): Doc {
+function assemble(blocks: { text: string; spans: ItemSpan[] }[]): Omit<Doc, "captions" | "bodyEnd"> {
   const spans: ItemSpan[] = [];
   let cursor = 0;
   for (const b of blocks) {
@@ -298,4 +395,3 @@ function breaksParagraph(
   if (Math.abs(cur[0].h - prev[0].h) > Math.max(cur[0].h, prev[0].h) * 0.2) return true; // 字号变了
   return false;
 }
-

@@ -30,7 +30,7 @@ import { readSelection } from "./selection";
 
 const host = document.createElement("div");
 host.id = "sidenote-root";
-host.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;";
+host.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;z-index:2147483647;";
 const shadow = host.attachShadow({ mode: "open" });
 
 const styleEl = document.createElement("style");

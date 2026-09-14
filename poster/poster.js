@@ -47,7 +47,7 @@ function roundRect(ctx, x, y, w, h, r, o) {
 
 /** 页脚统一署名 */
 function footer(ctx, note) {
-  text(ctx, "划词旁注 · SideNote", 80, H - 132, { size: 26, weight: 600, color: C.mute });
+  text(ctx, "DeepSeek 伴读", 80, H - 132, { size: 26, weight: 600, color: C.mute });
   if (note) text(ctx, note, 80, H - 92, { size: 22, color: C.dim });
 }
 
@@ -226,7 +226,7 @@ posters.push(function (ctx) {
   text(ctx, "三步装好", 80, 120 + 68 * 1.3, { size: 68, weight: 700, color: C.accent });
 
   const steps = [
-    ["1", "下载", "GitHub Releases 里的 sidenote.zip，解压出来"],
+    ["1", "下载", "GitHub Releases 里的安装压缩包，解压出来"],
     ["2", "装进 Chrome", "chrome://extensions → 开发者模式 → 加载已解压的扩展程序"],
     ["3", "填 Key", "设置页会自动打开，填你自己的 DeepSeek API Key"],
   ];
@@ -255,7 +255,7 @@ const canvases = [];
 
 function save(cv, n) {
   const a = document.createElement("a");
-  a.download = "sidenote-poster-" + n + ".png";
+  a.download = "deepseek-reading-companion-poster-" + n + ".png";
   a.href = cv.toDataURL("image/png");
   a.click();
 }

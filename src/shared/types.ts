@@ -12,7 +12,7 @@ export interface Settings {
   placement: "follow" | "right";
   /** 深度思考。v4-flash 默认开启，但查词场景多等 5-10 秒不划算 */
   deepThinking: boolean;
-  /** 打开后把每次实际发出的四条消息完整打进 service worker 控制台 */
+  /** 打开后把每次实际发出的消息完整打进 service worker 控制台 */
   debug: boolean;
 }
 
@@ -27,7 +27,20 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 /** 一次查询所需的全部上下文 —— 这是整个工具的输入契约 */
+export interface PdfPageImage {
+  page: number;
+  dataUrl: string;
+}
+
 export interface Query {
+  /** PDF 整理后正文的精确选区；网页查询可省略。 */
+  selectionStart?: number;
+  selectionEnd?: number;
+  pdfPage?: number;
+  pdfCaptions?: string;
+  /** 图注独立存放时，正文上下文的边界仍落在当前阅读页。 */
+  contextEnd?: number;
+  pdfImages?: PdfPageImage[];
   /** 用户选中的词或短语 */
   word: string;
   /** 选中处所在的那一句 */

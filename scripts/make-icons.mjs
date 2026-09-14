@@ -60,7 +60,7 @@ function draw(size) {
   const S = size * SS;
   const acc = new Float64Array(size * size * 4);
 
-  const BG = [37, 99, 235]; // #2563eb
+  const BG = [77, 107, 254]; // #4d6bfe，伴读的蓝色主题
   const LINE = [255, 255, 255];
 
   // 三行"文字"：中间一行是选中高亮，做得更亮更粗

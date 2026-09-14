@@ -3,5 +3,8 @@ dist
 .vite
 *.log
 sidenote.zip
+deepseek-reading-companion.zip
 .claude
+work/
+.playwright-cli/
 poster/index.html
