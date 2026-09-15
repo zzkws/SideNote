@@ -1,5 +1,5 @@
 import { useSpeech } from "../speech/useSpeech";
-import { speechTrigger } from "./store";
+import { speechTrigger, speechVolume } from "./store";
 
 export function SpeakerIcon() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -8,7 +8,7 @@ export function SpeakerIcon() {
 }
 
 export function Pronunciation({ text }: { text: string }) {
-  const speech = useSpeech(text, speechTrigger.value === "selection");
+  const speech = useSpeech(text, speechTrigger.value === "selection", speechVolume.value / 100);
   const waiting = speech.active && speech.playback !== "playing";
   return <span class="sn-pronunciation">
     <button type="button" class={`sn-speak${speech.active ? " is-active" : ""}${speech.playback === "error" ? " is-error" : ""}`}

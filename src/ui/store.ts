@@ -7,6 +7,7 @@ export const visible = signal(false);
 /** 卡片停靠方式，跟设置页同步 */
 export const placement = signal<Settings["placement"]>("follow");
 export const speechTrigger = signal<Settings["speechTrigger"]>("manual");
+export const speechVolume = signal(100);
 export const word = signal("");
 /** 保留 Range，浮层用它跟随滚动 */
 export const anchor = signal<Range | null>(null);

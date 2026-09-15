@@ -16,6 +16,7 @@ import {
   failure,
   placement,
   speechTrigger,
+  speechVolume,
   pushTurn,
   status,
   thread,
@@ -169,6 +170,7 @@ function applySettings(s: Settings) {
   settings = s;
   placement.value = s.placement;
   speechTrigger.value = s.speechTrigger;
+  speechVolume.value = s.speechVolume;
 }
 
 void loadSettings().then(applySettings);

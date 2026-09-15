@@ -5,7 +5,7 @@ import { INITIAL_MODEL_STATE, SPEECH_PORT, modelStatusText, normalizeSpeechText,
 type Playback = "idle" | "waiting" | "loading" | "synthesizing" | "playing" | "error";
 
 /** Audio stays in the reader's user-activated AudioContext, not a remote media URL. */
-export function useSpeech(text: string, prefetchOnChange = false) {
+export function useSpeech(text: string, prefetchOnChange = false, volume = 1) {
   const [model, setModel] = useState<ModelState>(INITIAL_MODEL_STATE);
   const [playback, setPlayback] = useState<Playback>("idle");
   const [error, setError] = useState("");
@@ -71,7 +71,9 @@ export function useSpeech(text: string, prefetchOnChange = false) {
       for (let i = 0; i < channel.length; i++) channel[i] = view.getInt16(i * 2, true) / 32768;
       const node = context.current.createBufferSource();
       node.buffer = buffer;
-      node.connect(context.current.destination);
+      const gain = context.current.createGain();
+      gain.gain.value = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 1;
+      node.connect(gain).connect(context.current.destination);
       node.onended = () => {
         node.disconnect();
         if (source.current === node) { source.current = undefined; stop(); }

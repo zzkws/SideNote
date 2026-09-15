@@ -136,6 +136,21 @@ function Options() {
       </div>
 
       <div class="field">
+        <label for="speech-volume">发音音量 <span class="range-value">{s.speechVolume}%</span></label>
+        <input
+          id="speech-volume"
+          class="range"
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value={s.speechVolume}
+          onInput={(e) => patch({ speechVolume: Number((e.target as HTMLInputElement).value) })}
+        />
+        <div class="hint">只调节 Kokoro 发音，不影响网页或 PDF 的其他声音。保存后生效。</div>
+      </div>
+
+      <div class="field">
         <label for="base">API 地址</label>
         <input
           id="base"

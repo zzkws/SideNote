@@ -64,3 +64,5 @@ button.primary:hover:not(:disabled) { color: #fff; filter: brightness(1.08); }
 .speech-actions button { flex: none; border-radius: 8px; padding: 7px 13px; font-size: 12px; }
 .speech-actions span { font-size: 12px; color: var(--muted); }
 .speech-footnote { font-size: 11px; color: var(--muted); line-height: 1.7; margin: 12px 0 0; }
+.range-value { float: right; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+input.range { height: 20px; padding: 0; border: 0; accent-color: var(--accent); cursor: pointer; }

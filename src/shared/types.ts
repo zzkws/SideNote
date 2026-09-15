@@ -12,6 +12,8 @@ export interface Settings {
   placement: "follow" | "right";
   /** 发音：点击词旁按钮，或选中后后台预生成 */
   speechTrigger: "manual" | "selection";
+  /** 发音播放音量，0–100 */
+  speechVolume: number;
   /** 深度思考。v4-flash 默认开启，但查词场景多等 5-10 秒不划算 */
   deepThinking: boolean;
   /** 打开后把每次实际发出的消息完整打进 service worker 控制台 */
@@ -25,6 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   trigger: "select",
   placement: "follow",
   speechTrigger: "manual",
+  speechVolume: 100,
   deepThinking: false,
   debug: false,
 };
