@@ -48,10 +48,17 @@ async function loadEngine() {
 }
 
 function encodePCM(audio: Float32Array): string {
+  // Kokoro's waveform has generous headroom (some short words peak around 0.5),
+  // which makes a normal WebAudio gain of 1 sound unexpectedly quiet. Normalize
+  // only upward to a safe speech peak; the user's 0–100% volume slider remains
+  // predictable and this never boosts an already loud waveform.
+  let peak = 0;
+  for (const sample of audio) peak = Math.max(peak, Math.abs(sample));
+  const normalization = peak > 0 && peak < 0.9 ? 0.9 / peak : 1;
   const bytes = new Uint8Array(audio.length * 2);
   const view = new DataView(bytes.buffer);
   for (let i = 0; i < audio.length; i++) {
-    const sample = Math.max(-1, Math.min(1, audio[i]));
+    const sample = Math.max(-1, Math.min(1, audio[i] * normalization));
     view.setInt16(i * 2, Math.round(sample * (sample < 0 ? 32768 : 32767)), true);
   }
   let binary = "";
