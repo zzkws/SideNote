@@ -8,3 +8,5 @@ deepseek-reading-companion.zip
 work/
 .playwright-cli/
 poster/index.html
+public/tts/
+output/playwright/

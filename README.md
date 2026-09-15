@@ -6,6 +6,8 @@
 
 **围绕 DeepSeek 模型能力与设计风格制作的阅读插件。**
 
+谨以此作品，表达本人对 deepseek 的喜爱之情。
+
 阅读英文网页或 PDF 时，选中词句，让 DeepSeek 结合前后文，沿着原文直接给出理解。
 
 Chrome 扩展 · 网页与 PDF · 自备 DeepSeek API Key · 本地历史
@@ -30,6 +32,7 @@ DeepSeek 伴读把 DeepSeek 放在正在阅读的文字旁边。回答沿用原�
 - **图文上下文**：PDF 的 Flash 查询可携带当前页及此前可识别图注所在页的图像，最多最近 12 个相关页。Pro 查询保持文本输入。
 - **本地历史**：保存最近 200 次对话，可以搜索并回到原文。
 - **深浅主题**：界面随系统主题切换，PDF 纸张周围保持中性灰色。
+- **本地发音**：选中词句旁提供 Kokoro Q8 美式 Heart 发音；安装后自动下载约 92 MB 量化语音包，校验后缓存，之后可离线播放。
 
 ## 安装
 
@@ -46,6 +49,8 @@ npm run build
 2. 点击“加载已解压的扩展程序”，选择项目中的 `dist` 文件夹。
 3. 在设置页填入自己的 [DeepSeek API Key](https://platform.deepseek.com/api_keys)，测试连接并保存。
 4. 打开英文网页划选词句；阅读 PDF 时，点击扩展菜单中的“打开 PDF 阅读器”。
+
+首次安装会在后台从 GitHub 下载 Kokoro Q8 语音包（Hugging Face 为备用源），设置页会显示进度。语音包只保存到浏览器本地，选中文字不会上传给发音引擎。
 
 本地打包使用 `npm run zip`，生成 `deepseek-reading-companion.zip`。[Releases](https://github.com/zzkws/SideNote/releases) 中的历史安装包可能仍使用旧名称 `sidenote.zip`。
 
@@ -73,6 +78,8 @@ npm run icons    # 重新生成图标
 ```
 
 技术栈：Manifest V3、TypeScript、Preact、Vite、PDF.js、Readability、KaTeX。无须额外后端即可使用自己的 API Key。
+
+本地语音运行时由 Kokoro、Transformers.js、ONNX Runtime Web 和 phonemizer.js 组成；各组件许可及固定版本见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。Q8 模型数据使用固定 revision 并在下载后校验 SHA-256，不把 92 MB 权重放进源码仓库。
 
 仓库沿用原 SideNote 地址。`docs/gold-examples.md`、旧截图和海报是早期设计存档，当前回答规则以代码中的系统提示词为准。
 

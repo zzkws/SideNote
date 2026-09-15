@@ -7,9 +7,14 @@ export default defineManifest({
   version: pkg.version,
   description: pkg.description,
 
-  // 最小权限：storage 存 API Key，activeTab 用于点击图标打开设置
-  permissions: ["storage"],
-  host_permissions: ["https://api.deepseek.com/*"],
+  minimum_chrome_version: "116",
+  // Model cache should not be evicted under ordinary website storage pressure.
+  permissions: ["storage", "offscreen", "unlimitedStorage"],
+  host_permissions: ["https://api.deepseek.com/*", "https://huggingface.co/*", "https://*.hf.co/*",
+    "https://github.com/*", "https://release-assets.githubusercontent.com/*"],
+  content_security_policy: {
+    extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+  },
 
   background: {
     service_worker: "src/background/index.ts",

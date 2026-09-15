@@ -1,10 +1,13 @@
 {
   "name": "deepseek-reading-companion",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "选中英文词句，让 DeepSeek 结合前后文，沿着原文直接解释。",
   "scripts": {
+    "predev": "node scripts/prepare-tts.mjs",
+    "prebuild": "node scripts/prepare-tts.mjs",
+    "prebuild:only": "node scripts/prepare-tts.mjs",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "icons": "node scripts/make-icons.mjs",
@@ -16,11 +19,13 @@
   },
   "dependencies": {
     "@floating-ui/dom": "^1.6.13",
+    "@huggingface/transformers": "3.8.1",
     "@mozilla/readability": "^0.5.0",
     "@preact/signals": "^2.0.1",
     "@types/katex": "^0.16.8",
     "dompurify": "^3.2.4",
     "katex": "^0.18.4",
+    "kokoro-js": "1.2.1",
     "marked": "^15.0.7",
     "pdfjs-dist": "^6.3.289",
     "preact": "^10.26.4"

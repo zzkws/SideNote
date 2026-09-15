@@ -1,6 +1,7 @@
 import { autoUpdate } from "@floating-ui/dom";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { Markdown } from "./Markdown";
+import { Pronunciation } from "./Pronunciation";
 import {
   anchor,
   failure,
@@ -139,7 +140,10 @@ export function Popup({ onClose, onOpenOptions, onRetry, onAsk }: Props) {
     <div class="sn-card" ref={cardRef}>
       <div class="sn-head">
         <span class="sn-badge">问</span>
-        <span class="sn-word">{word.value}</span>
+        <div class="sn-title-group">
+          <span class="sn-word">{word.value}</span>
+          <Pronunciation text={word.value} />
+        </div>
         {busy && <span class="sn-tag">生成中</span>}
         <button class="sn-x" onClick={onClose} title="关闭 (Esc)" type="button">
           ×

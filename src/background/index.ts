@@ -1,4 +1,5 @@
 import { loadSettings } from "../shared/settings";
+import { prepareSpeech } from "./speech";
 import { PORT_NAME, type ClientMessage, type ServerMessage } from "../shared/types";
 import { streamChat } from "./deepseek";
 import { buildFollowupMessages, buildMessages, messageText, type ChatMessage } from "./prompt";
@@ -109,4 +110,5 @@ function dumpContext(word: string, messages: ChatMessage[]) {
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") chrome.runtime.openOptionsPage();
+  void prepareSpeech();
 });

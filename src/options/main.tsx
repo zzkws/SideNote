@@ -3,6 +3,7 @@ import { useEffect, useState } from "preact/hooks";
 import { loadSettings, saveSettings } from "../shared/settings";
 import { DEFAULT_SETTINGS, type ModelId, type Settings } from "../shared/types";
 import "./options.css";
+import { SpeechSettings } from "./SpeechSettings";
 
 function Options() {
   const [s, setS] = useState<Settings>(DEFAULT_SETTINGS);
@@ -60,6 +61,8 @@ function Options() {
     <div class="wrap">
       <h1>DeepSeek 伴读</h1>
       <p class="sub">选中英文词句，让 DeepSeek 结合前后文，沿着原文直接解释。</p>
+
+      <SpeechSettings />
 
       <div class="field">
         <label for="key">DeepSeek API Key</label>

@@ -5,6 +5,7 @@ import manifest from "./manifest.config";
 
 export default defineConfig({
   plugins: [preact(), crx({ manifest })],
+  worker: { format: "es" },
   build: {
     target: "esnext",
     rollupOptions: {
@@ -14,6 +15,7 @@ export default defineConfig({
         pdfViewer: "src/pdf/index.html",
         menu: "src/menu/index.html",
         history: "src/history/index.html",
+        speech: "src/speech/offscreen.html",
       },
     },
     // content script 里的 CSS 通过 ?inline 注入 Shadow DOM，不需要额外拆分

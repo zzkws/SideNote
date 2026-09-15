@@ -43,3 +43,24 @@ button.primary:hover:not(:disabled) { color: #fff; filter: brightness(1.08); }
 .status { font-size: 13px; }
 .status.ok { color: var(--ok); }
 .status.err { color: var(--danger); }
+
+.speech-panel { padding: 20px; margin: 0 0 28px; border: 1px solid var(--border); border-radius: 16px; }
+.speech-heading { display: flex; align-items: center; gap: 12px; }
+.speech-mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--subtle); color: var(--accent); }
+.speech-mark svg { width: 22px; height: 22px; }
+.speech-heading h2 { font-size: 15px; margin: 0 0 1px; }
+.speech-heading p { margin: 0; font-size: 12px; color: var(--muted); }
+.speech-heading p span { margin: 0 4px; }
+.speech-local { margin-left: auto; font-size: 11px; color: var(--accent); background: var(--subtle); padding: 3px 8px; border-radius: 6px; }
+.speech-description { margin: 16px 0 12px; color: var(--muted); font-size: 13px; }
+.speech-download { background: var(--subtle); padding: 12px; border-radius: 9px; }
+.speech-status { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; font-size: 12px; }
+.speech-status > :last-child { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
+.speech-download.has-error { color: var(--danger); }
+.speech-download progress { display: block; width: 100%; height: 4px; margin-top: 10px; border: 0; border-radius: 4px; overflow: hidden; accent-color: var(--accent); }
+.speech-download progress::-webkit-progress-bar { background: var(--border); }
+.speech-download progress::-webkit-progress-value { background: var(--accent); border-radius: 4px; }
+.speech-actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.speech-actions button { flex: none; border-radius: 8px; padding: 7px 13px; font-size: 12px; }
+.speech-actions span { font-size: 12px; color: var(--muted); }
+.speech-footnote { font-size: 11px; color: var(--muted); line-height: 1.7; margin: 12px 0 0; }
