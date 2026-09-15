@@ -121,6 +121,21 @@ function Options() {
       </div>
 
       <div class="field">
+        <label for="speech-trigger">发音触发</label>
+        <select
+          id="speech-trigger"
+          value={s.speechTrigger}
+          onChange={(e) =>
+            patch({ speechTrigger: (e.target as HTMLSelectElement).value as Settings["speechTrigger"] })
+          }
+        >
+          <option value="manual">点击按钮播放（当前）</option>
+          <option value="selection">选中后自动生成（点击按钮播放）</option>
+        </select>
+        <div class="hint">自动模式会在选中后后台生成并缓存声音，不强制自动播放；这样不会被浏览器的自动播放策略打断。</div>
+      </div>
+
+      <div class="field">
         <label for="base">API 地址</label>
         <input
           id="base"

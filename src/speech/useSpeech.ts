@@ -5,7 +5,7 @@ import { INITIAL_MODEL_STATE, SPEECH_PORT, modelStatusText, normalizeSpeechText,
 type Playback = "idle" | "waiting" | "loading" | "synthesizing" | "playing" | "error";
 
 /** Audio stays in the reader's user-activated AudioContext, not a remote media URL. */
-export function useSpeech(text: string) {
+export function useSpeech(text: string, prefetchOnChange = false) {
   const [model, setModel] = useState<ModelState>(INITIAL_MODEL_STATE);
   const [playback, setPlayback] = useState<Playback>("idle");
   const [error, setError] = useState("");
@@ -13,6 +13,7 @@ export function useSpeech(text: string) {
   const context = useRef<AudioContext>();
   const source = useRef<AudioBufferSourceNode>();
   const request = useRef<string>();
+  const requestKind = useRef<"play" | "prefetch">("play");
   const watchdog = useRef<ReturnType<typeof setTimeout>>();
   const mounted = useRef(false);
 
@@ -52,7 +53,14 @@ export function useSpeech(text: string) {
     if (message.type === "cancelled") { stop(); return; }
     if (message.type === "error") { fail(message.message); return; }
     if (message.type === "working") { armWatchdog(); setPlayback(message.stage); return; }
-    if (message.type !== "audio" || !context.current) return;
+    if (message.type !== "audio") return;
+    if (requestKind.current === "prefetch") {
+      clearTimeout(watchdog.current);
+      request.current = undefined;
+      setPlayback("idle");
+      return;
+    }
+    if (!context.current) return;
     clearTimeout(watchdog.current);
     try {
       const binary = atob(message.pcm);
@@ -118,6 +126,7 @@ export function useSpeech(text: string) {
       if (!context.current || context.current.state === "closed") context.current = new AudioContext();
       const id = crypto.randomUUID();
       request.current = id;
+      requestKind.current = "play";
       setError("");
       setPlayback("waiting");
       armWatchdog();
@@ -126,6 +135,24 @@ export function useSpeech(text: string) {
       connect().postMessage({ type: "speak", id, text: normalized } satisfies SpeechCommand);
     } catch { fail("无法启动发音，请刷新页面后重试"); }
   }
+
+  function prefetch() {
+    if (!text.trim() || request.current) return;
+    const normalized = normalizeSpeechText(text);
+    if (speechTextError(normalized)) return;
+    const id = crypto.randomUUID();
+    request.current = id;
+    requestKind.current = "prefetch";
+    setError("");
+    setPlayback("waiting");
+    armWatchdog();
+    try { connect().postMessage({ type: "speak", id, text: normalized, prefetch: true } satisfies SpeechCommand); }
+    catch { fail("语音连接已断开，点击重试"); }
+  }
+
+  useEffect(() => {
+    if (prefetchOnChange && text.trim()) prefetch();
+  }, [text, prefetchOnChange]);
 
   const active = playback !== "idle" && playback !== "error";
   const label = playback === "error" ? error

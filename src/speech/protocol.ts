@@ -22,7 +22,7 @@ export interface ModelState {
 export const INITIAL_MODEL_STATE: ModelState = { phase: "checking", received: 0, total: MODEL_BYTES };
 export type SpeechCommand =
   | { type: "prepare" }
-  | { type: "speak"; id: string; text: string }
+  | { type: "speak"; id: string; text: string; prefetch?: boolean }
   | { type: "cancel"; id: string };
 export type SpeechEvent =
   | { type: "model"; state: ModelState }

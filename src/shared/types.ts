@@ -10,6 +10,8 @@ export interface Settings {
   trigger: "select" | "alt-select";
   /** 卡片停靠：贴着选中的词 / 固定在视口右缘 */
   placement: "follow" | "right";
+  /** 发音：点击词旁按钮，或选中后后台预生成 */
+  speechTrigger: "manual" | "selection";
   /** 深度思考。v4-flash 默认开启，但查词场景多等 5-10 秒不划算 */
   deepThinking: boolean;
   /** 打开后把每次实际发出的消息完整打进 service worker 控制台 */
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   baseUrl: "https://api.deepseek.com",
   trigger: "select",
   placement: "follow",
+  speechTrigger: "manual",
   deepThinking: false,
   debug: false,
 };

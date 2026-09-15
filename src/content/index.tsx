@@ -15,6 +15,7 @@ import {
   appendDelta,
   failure,
   placement,
+  speechTrigger,
   pushTurn,
   status,
   thread,
@@ -167,6 +168,7 @@ let settings: Settings | null = null;
 function applySettings(s: Settings) {
   settings = s;
   placement.value = s.placement;
+  speechTrigger.value = s.speechTrigger;
 }
 
 void loadSettings().then(applySettings);
